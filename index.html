@@ -81,22 +81,25 @@
          under the clock / notch in standalone mode, so the content pads
          itself clear of it (insets are 0 in a normal browser tab, so the
          layout there is unchanged) */
-      #app{ max-width:600px; margin:0 auto; padding:calc(8px + env(safe-area-inset-top, 0px)) calc(10px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(10px + env(safe-area-inset-left, 0px)); height:100dvh; display:flex; flex-direction:column; }
+      #app{ max-width:600px; margin:0 auto; padding:calc(4px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px)); height:100dvh; display:flex; flex-direction:column; }
       #view-solo,#view-remote{ flex:1; min-height:0; display:flex; flex-direction:column; }
-      #soloCalc,#remoteCalc{ flex:1; min-height:0; display:flex; }
-      #soloCalc .calc,#remoteCalc .calc{ flex:1; width:100%; }
+      /* the calculator panel hugs its content instead of stretching to
+         fill the screen: leftover height used to sit inside the panel
+         as big blank gaps around the number buttons */
+      #soloCalc,#remoteCalc{ flex:none; display:flex; }
+      #soloCalc .calc,#remoteCalc .calc{ flex:none; width:100%; }
 
       /* ---------- mode bar ---------- */
-      .modebar{ display:flex; gap:6px; align-items:stretch; margin:0 0 8px; flex-wrap:nowrap; flex:none; }
+      .modebar{ display:flex; gap:5px; align-items:stretch; margin:0 0 4px; flex-wrap:nowrap; flex:none; }
       .seg{ display:flex; flex:1 1 auto; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:3px; gap:3px; min-width:0; }
       .seg button{
         flex:1; border:0; background:transparent; color:var(--ink-dim);
-        font-weight:700; font-size:14px; border-radius:9px; padding:6px 2px; min-height:40px; white-space:nowrap;
+        font-weight:700; font-size:14px; border-radius:9px; padding:5px 2px; min-height:38px; white-space:nowrap;
       }
       .seg button[aria-pressed="true"]{ background:linear-gradient(180deg,#f0cd72,#c9962e); color:#2e2003; box-shadow:inset 0 0 0 1px #ffe9ad, inset 0 1px 0 #fff8dd, 0 0 14px rgba(232,184,75,.25); }
       .barbtn{
         border:1px solid var(--line); background:var(--bg-panel); color:var(--ink);
-        border-radius:12px; padding:0 12px; font-weight:700; font-size:14px; min-height:46px;
+        border-radius:12px; padding:0 12px; font-weight:700; font-size:14px; min-height:42px;
         display:inline-flex; align-items:center; gap:6px; flex:none;
       }
       @media (max-width:520px){
@@ -117,7 +120,7 @@
         position:relative; background:linear-gradient(165deg,#4a3517 0%, #2e2110 48%, #1f1508 100%);
         border:2px solid #a8842f; border-radius:var(--radius);
         box-shadow:inset 0 0 0 2px #120d05, inset 0 0 0 4px rgba(232,184,75,.32), 0 6px 18px rgba(0,0,0,.45);
-        padding:10px 12px 9px; margin-bottom:8px; overflow:hidden; flex:none;
+        padding:7px 10px 6px; margin-bottom:4px; overflow:hidden; flex:none;
       }
       .pcard::before{ content:""; position:absolute; inset:0 auto 0 0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--ac,#888) 55%,#6d5516); z-index:2; }
       .pcard::after{ content:""; position:absolute; inset:5px; border:1px solid rgba(232,184,75,.25); border-radius:6px; pointer-events:none; z-index:1; }
@@ -138,7 +141,7 @@
         filter:drop-shadow(0 0 3px rgba(255,160,40,.55));
       }
       .pname{
-        color:#2e2005; font-weight:900; font-size:15px; padding:2px 2px; min-height:30px;
+        color:#2e2005; font-weight:900; font-size:15px; padding:2px 2px; min-height:26px;
         display:inline-flex; align-items:center; max-width:260px; min-width:0;
         overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
       }
@@ -146,9 +149,9 @@
       .phead:has(.ptag)::after{ margin-left:0; }
       /* art window: the LP lives in the card's dark illustration frame */
       .lpwrap{
-        display:flex; align-items:baseline; gap:10px; margin-top:8px; position:relative; z-index:2;
+        display:flex; align-items:baseline; gap:10px; margin-top:6px; position:relative; z-index:2;
         background:radial-gradient(120% 150% at 50% 0%, #251b0d 0%, #0d0903 72%);
-        border:1px solid rgba(232,184,75,.5); border-radius:6px; padding:4px 12px 6px;
+        border:1px solid rgba(232,184,75,.5); border-radius:6px; padding:2px 12px 4px;
         box-shadow:inset 0 0 18px rgba(0,0,0,.75), inset 0 0 0 1px #000;
       }
       .lplabel{ font-size:12px; font-weight:900; color:var(--ac); letter-spacing:.22em; flex:none; }
@@ -169,7 +172,7 @@
       .lp.low{ color:var(--amber); text-shadow:0 0 12px rgba(255,197,61,.55), 0 0 32px rgba(255,197,61,.3); }
       .lp.ko{ color:var(--red); text-shadow:0 0 14px rgba(255,70,85,.6), 0 0 36px rgba(255,70,85,.35); }
       /* solo: the LP number is the hero of the whole screen */
-      #soloCard .pcard{ padding:12px 14px 12px; }
+      #soloCard .pcard{ padding:8px 10px 7px; }
       #soloCard .lp{ font-size:clamp(76px,22vw,138px); letter-spacing:.01em; }
       #soloCard .pname{ font-size:13px; min-height:24px; color:var(--ink-dim); }
       #soloCard .lplabel{ font-size:13px; }
@@ -185,7 +188,7 @@
          rest of the duel. */
       .pcard.is-ko .kobadge{ display:inline-block; animation:kopulse .55s ease-in-out 6; }
       @keyframes kopulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.07);} }
-      .lpbar{ height:8px; border-radius:99px; background:#0c0803; border:1px solid rgba(232,184,75,.35); margin-top:8px; overflow:hidden; position:relative; z-index:2; }
+      .lpbar{ height:7px; border-radius:99px; background:#0c0803; border:1px solid rgba(232,184,75,.35); margin-top:5px; overflow:hidden; position:relative; z-index:2; }
       .lpbar > i{ display:block; height:100%; border-radius:99px; background:linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0) 55%), var(--ac); transition:width .45s cubic-bezier(.22,1,.36,1); }
       .lpbar.low > i{ background:var(--amber); }
       .lpbar.ko > i{ background:var(--red); }
@@ -198,29 +201,48 @@
 
       /* ---------- keypad block ---------- */
       /* the keypad block is a stone tablet with a gold-trimmed edge */
-      .calc{ background:linear-gradient(180deg,#1e1609,#130e06); border:1px solid var(--line); border-radius:var(--radius); box-shadow:inset 0 1px 0 rgba(232,184,75,.18), inset 0 0 0 1px rgba(0,0,0,.5); padding:10px; margin-bottom:0; display:flex; flex-direction:column; flex:1; min-height:0; }
-      /* Fixed single-row grid: [total (fixed width) | C (fixed slot)].
-         No wrapping ever — space-between pins C at the same right-edge
-         coordinates and size regardless of how many digits the total has. */
-      .amtdisp{ display:grid; grid-template-columns:96px 44px; justify-content:space-between; align-items:center; column-gap:6px; row-gap:0; flex-wrap:nowrap; padding:2px 4px 6px; height:48px; min-height:48px; flex:none; width:100%; }
-      .amtdisp .cap{ font-size:12px; font-weight:700; color:var(--ink-faint); letter-spacing:.1em; white-space:nowrap; }
-      .amt{ font-size:28px; font-weight:800; color:#ffe9a8; line-height:1; white-space:nowrap; width:100%; min-width:0; text-align:right; display:block; }
-      .amt.empty{ color:var(--ink-faint); }
-      /* amount is built ONLY from the denomination buttons (100 / 500 / 1000 /
-         2000), each with a + (add) and a − (subtract) button side by side so a
-         mis-tap can be corrected in place — no digit keypad. 4 rows of pairs
-         fill the freed vertical space; every button stays >=44px tall. */
+      .calc{ background:linear-gradient(180deg,#1e1609,#130e06); border:1px solid var(--line); border-radius:var(--radius); box-shadow:inset 0 1px 0 rgba(232,184,75,.18), inset 0 0 0 1px rgba(0,0,0,.5); padding:8px 10px 9px; margin-bottom:0; display:flex; flex-direction:column; flex:1; min-height:0; }
+      /* The amount being built is the readout of the keypad, so it gets
+         the big type: a single centred row, nothing else competing with
+         it. The correction tools (C and the − chips) live in their own
+         spread-out row directly beneath it — see .subrow — because they
+         edit THIS number, and grouping them here says so at a glance. */
+      .amtdisp{ display:flex; align-items:center; justify-content:center; padding:2px 4px 0; height:56px; min-height:56px; flex:none; width:100%; }
+      .amt{ font-size:clamp(38px,10.5vw,48px); font-weight:900; color:#ffe9a8; line-height:1; white-space:nowrap; text-align:center; display:block; text-shadow:0 0 14px rgba(232,184,75,.35); }
+      .amt.empty{ color:var(--ink-faint); text-shadow:none; }
+      /* amount is built ONLY from the denomination buttons (100 / 500 /
+         1000 / 2000) — no digit keypad, and no + sign on the buttons:
+         adding is the one default action, so the bare number carries it.
+         The − chips correct a mis-tap in place only: with NO amount
+         being entered they do not change LP at all. The number buttons
+         stack in 4 full-width rows; the bigger amount row and the
+         correction row take vertical space back from them, so they sit
+         smaller than the old paired grid while staying >=44px tall. */
+      .subrow{ display:flex; gap:6px; align-items:stretch; padding:4px 0 8px; flex:none; width:100%; }
       .clrbtn{
-        border:1px solid var(--line); background:#251b0d; color:#ff8b96; border-radius:9px;
-        font-weight:800; font-size:15px; width:44px; min-width:44px; max-width:44px; height:38px; min-height:38px; max-height:38px; padding:0; flex:none;
-        justify-self:end; align-self:center; display:flex; align-items:center; justify-content:center; line-height:1;
+        /* same raised button face as the neighbouring chips (gradient,
+           top highlight, bottom shade, drop shadow, press-down) so C
+           reads as a button, not a flat label — in a deep red-brown
+           that keeps it distinct from both the gold add chips and the
+           magenta − chips beside it */
+        border:1px solid #9a4a3a; background:linear-gradient(180deg,#74362b,#4a1f18); color:#ffe3de; border-radius:9px;
+        font-family:"Cinzel","Zen Kaku Gothic New",sans-serif;
+        font-weight:900; font-size:16px; height:42px; min-height:42px; padding:0 4px; flex:1 1 0; min-width:0;
+        display:flex; align-items:center; justify-content:center; line-height:1;
+        text-shadow:0 1px 2px rgba(0,0,0,.5);
+        box-shadow:inset 0 1px 0 rgba(255,200,190,.4), inset 0 -2px 0 rgba(20,4,2,.55), 0 2px 6px rgba(0,0,0,.35);
       }
-      .clrbtn:active{ background:#2a1430; }
-      .quick{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(4,1fr); gap:8px; flex:1; min-height:0; }
-      /* + chips wear a monster card's tan-gold face; − chips are trap cards */
+      .clrbtn:active{ background:linear-gradient(180deg,#5a2a21,#38160f); transform:translateY(1px); box-shadow:inset 0 1px 0 rgba(255,200,190,.25), inset 0 -1px 0 rgba(20,4,2,.55); }
+      /* Addition buttons keep a fixed, modest height instead of stretching
+         to fill the tablet: the grid area still flexes, but the rows are
+         capped and centred in it, so extra screen height becomes even
+         breathing room around the group rather than taller buttons.
+         54px rows stay comfortably above the 44px tap minimum. */
+      .quick{ display:grid; grid-template-columns:1fr; grid-template-rows:repeat(4,54px); gap:6px; flex:1; min-height:0; align-content:center; }
+      /* number chips wear a monster card's tan-gold face; − chips are trap cards */
       .qbtn{
         border:1px solid #8a5f1d; background:linear-gradient(180deg,#e7b264,#bd8438); color:#33200a;
-        border-radius:8px; font-weight:800; font-size:clamp(22px,6.5vw,32px); padding:6px 0; min-height:44px;
+        border-radius:8px; font-weight:800; font-size:clamp(20px,5.6vw,26px); padding:4px 0; min-height:44px;
         text-shadow:0 1px 0 rgba(255,240,200,.5);
         box-shadow:inset 0 1px 0 rgba(255,246,214,.65), inset 0 -2px 0 rgba(90,58,10,.45);
       }
@@ -231,26 +253,42 @@
         box-shadow:inset 0 1px 0 rgba(255,190,220,.4), inset 0 -2px 0 rgba(40,4,20,.5);
       }
       .qbtn.qsub:active{ background:#5f1a38; }
-      .acts{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; margin-top:8px; flex:none; }
+      /* the − chips in the correction row: same trap-card face as ever,
+         just at utility size, spread evenly beside C */
+      .subrow .qbtn{ flex:1 1 0; min-width:0; height:42px; min-height:42px; padding:2px 0; font-size:clamp(13px,3.8vw,17px); border-radius:9px; }
+      .acts{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; margin-top:6px; flex:none; }
       .act{
-        border-radius:12px; font-weight:900; font-size:18px; padding:10px 0; min-height:52px; color:#fff;
+        border-radius:12px; font-weight:900; font-size:18px; padding:8px 0; min-height:48px; color:#fff;
         display:flex; align-items:center; justify-content:center; gap:8px;
       }
       .act.dmg{ background:linear-gradient(180deg,#d92b3f,#a31326); border:1px solid #ff6b7a; box-shadow:0 4px 18px rgba(255,70,85,.28); }
       .act.dmg:active{ background:#a31326; }
       .act.heal{ background:linear-gradient(180deg,#12b981,#0a7a58); border:1px solid #3fe0ae; box-shadow:0 4px 18px rgba(47,230,167,.22); }
       .act.heal:active{ background:#0a7a58; }
-      .act.half{ background:#251b0d; border:1px solid var(--line); color:var(--amber); font-size:22px; padding:10px 18px; min-width:88px; }
+      .act.half{ background:#251b0d; border:1px solid var(--line); color:var(--amber); font-size:20px; padding:8px 16px; min-width:84px; }
       /* symbol-only actions: the glyph + color carry the meaning, no word labels */
-      .act.dmg,.act.heal{ font-size:34px; line-height:1; padding:6px 0; }
+      .act.dmg,.act.heal{ font-size:30px; line-height:1; padding:5px 0; }
       .calc.mini .act.dmg,.calc.mini .act.heal{ font-size:26px; }
       .act:disabled{ opacity:.38; box-shadow:none; }
+      /* dimmed-but-tappable state for the − / ＋ actions when no amount is
+         entered yet: a real disabled button swallows the tap silently,
+         which reads as "not responding" — the class only dims, and the
+         click handler answers with the hint wiggle below */
+      .act.off{ opacity:.38; box-shadow:none; }
+      /* feedback for taps that change nothing on their own: the amount
+         row wiggles (enter a number with the chips first), and a
+         corrected amount pulses so a − chip tap visibly registers */
+      .calc.hint .amtdisp{ animation:shake .32s ease-in-out; }
+      .amt.bump{ animation:amtbump .28s ease; }
+      @keyframes amtbump{ 0%{ transform:scale(1);} 35%{ transform:scale(1.18);} 100%{ transform:scale(1);} }
 
       /* compact variant (legacy hooks kept minimal) */
-      .calc.mini{ padding:7px; margin:8px 0 0; background:rgba(16,11,4,.6); }
-      .calc.mini .amtdisp{ height:40px; min-height:40px; padding-bottom:4px; grid-template-columns:72px 44px; }
-      .calc.mini .amt{ font-size:20px; }
-      .calc.mini .qbtn{ min-height:44px; font-size:20px; }
+      .calc.mini{ padding:7px; margin:6px 0 0; background:rgba(16,11,4,.6); }
+      .calc.mini .amtdisp{ height:48px; min-height:48px; padding-bottom:2px; }
+      .calc.mini .amt{ font-size:32px; }
+      .calc.mini .quick{ grid-template-rows:repeat(4,48px); gap:5px; }
+      .calc.mini .qbtn{ min-height:44px; font-size:19px; }
+      .calc.mini .subrow .qbtn,.calc.mini .clrbtn{ height:40px; min-height:40px; }
       .calc.mini .act{ min-height:38px; font-size:15px; padding:6px 0; }
       .calc.mini .act.half{ font-size:16px; padding:6px 10px; min-width:64px; }
       .calc.mini .quick,.calc.mini .acts{ gap:5px; }
@@ -263,14 +301,14 @@
       #remoteLobby{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
       #remoteBattle{ flex:1; min-height:0; display:flex; flex-direction:column; }
       #remoteBattle #remoteCalc{ flex:1; min-height:0; display:flex; }
-      .battlebar{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex:none; }
+      .battlebar{ display:flex; align-items:center; gap:8px; margin-bottom:6px; flex:none; }
       .battlebar .sp{ flex:1; }
       .battlebar .barbtn{ min-height:40px; }
       .rpanel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px; margin-bottom:8px; flex:none; }
       .rpanel.collapsed .hideable{ display:none !important; }
       .rpanel.collapsed .roomcode{ font-size:20px; padding:4px 10px; }
       .rpanel.collapsed .codebox{ margin:6px 0; }
-      #remoteCards{ display:flex; flex-direction:column; gap:8px; margin-bottom:8px; flex:none; }
+      #remoteCards{ display:flex; flex-direction:column; gap:6px; margin-bottom:6px; flex:none; }
       #remoteCards .pcard{ margin-bottom:0; }
       #remoteCards .ptag{ display:none; }
       #remoteCards .kobadge{ font-size:12px; padding:2px 7px; }
@@ -386,8 +424,9 @@
          otherwise keep the mobile GPU/compositor waking up for nothing. */
       .app-hidden *, .app-hidden *::before, .app-hidden *::after{ animation-play-state:paused !important; }
       @media (max-width:380px){
-        .act.half{ min-width:72px; padding:10px 10px; }
-        .qbtn{ font-size:26px; }
+        .act.half{ min-width:72px; padding:8px 10px; }
+        .qbtn{ font-size:22px; }
+        .quick{ grid-template-rows:repeat(4,50px); }
       }
     </style>
   </head>
@@ -1095,17 +1134,19 @@
         '<div class="calc" data-ctx="'+ctx+'" data-p="'+p+'">' +
           '<div class="amtdisp">' +
             '<span class="amt num empty" data-amt>0</span>' +
+          '</div>' +
+          '<div class="subrow">' +
             '<button type="button" class="clrbtn" data-k="clr" aria-label="入力をクリア">C</button>' +
+            '<button type="button" class="qbtn num qsub" data-chip-sub="100">−100</button>' +
+            '<button type="button" class="qbtn num qsub" data-chip-sub="500">−500</button>' +
+            '<button type="button" class="qbtn num qsub" data-chip-sub="1000">−1000</button>' +
+            '<button type="button" class="qbtn num qsub" data-chip-sub="2000">−2000</button>' +
           '</div>' +
           '<div class="quick">' +
-            '<button type="button" class="qbtn num" data-chip="100">+100</button>' +
-            '<button type="button" class="qbtn num qsub" data-chip-sub="100">−100</button>' +
-            '<button type="button" class="qbtn num" data-chip="500">+500</button>' +
-            '<button type="button" class="qbtn num qsub" data-chip-sub="500">−500</button>' +
-            '<button type="button" class="qbtn num" data-chip="1000">+1000</button>' +
-            '<button type="button" class="qbtn num qsub" data-chip-sub="1000">−1000</button>' +
-            '<button type="button" class="qbtn num" data-chip="2000">+2000</button>' +
-            '<button type="button" class="qbtn num qsub" data-chip-sub="2000">−2000</button>' +
+            '<button type="button" class="qbtn num" data-chip="100">100</button>' +
+            '<button type="button" class="qbtn num" data-chip="500">500</button>' +
+            '<button type="button" class="qbtn num" data-chip="1000">1000</button>' +
+            '<button type="button" class="qbtn num" data-chip="2000">2000</button>' +
           '</div>' +
           '<div class="acts">' +
             '<button type="button" class="act dmg" data-act="dmg" aria-label="ダメージ">−</button>' +
@@ -1184,8 +1225,33 @@
         if (amtEl.textContent !== atxt) amtEl.textContent = atxt;
         amtEl.classList.toggle('empty', a === '');
         var n = amtNum(ctx);
-        box.querySelector('[data-act="dmg"]').disabled = n <= 0;
-        box.querySelector('[data-act="heal"]').disabled = n <= 0;
+        /* NOT the disabled attribute (nor aria-disabled, which tools
+           and AT also read as inert): a disabled button swallows the
+           tap silently, which reads as "broken". Dim via class only
+           and let the tap trigger the enter-a-number hint in the
+           handler — the button genuinely still responds. */
+        ['dmg','heal'].forEach(function(k){
+          box.querySelector('[data-act="'+k+'"]').classList.toggle('off', n <= 0);
+        });
+      }
+      /* tap feedback helpers: pulse the pending amount when a − chip
+         corrects it, and wiggle the amount row when an action button is
+         tapped with nothing entered yet — a tap must never look dead */
+      function bumpAmt(box){
+        var amtEl = box.querySelector('[data-amt]');
+        if (!amtEl) return;
+        amtEl.classList.remove('bump');
+        void amtEl.offsetWidth;
+        amtEl.classList.add('bump');
+      }
+      var hintTimers = {};
+      function hintCalc(box){
+        var ctx = box.getAttribute('data-ctx');
+        box.classList.remove('hint');
+        void box.offsetWidth;
+        box.classList.add('hint');
+        if (hintTimers[ctx]) clearTimeout(hintTimers[ctx]);
+        hintTimers[ctx] = setTimeout(function(){ box.classList.remove('hint'); }, 380);
       }
       function renderAllCalcs(){ ['solo','remote'].forEach(renderCalc); }
 
@@ -1332,9 +1398,22 @@
         var chipSub = ev.target.closest('[data-chip-sub]');
         if (chipSub){
           var sbox = chipSub.closest('.calc'); var sctx = sbox.getAttribute('data-ctx');
-          var sv = amtNum(sctx) - parseInt(chipSub.getAttribute('data-chip-sub'), 10);
-          amounts[sctx] = sv > 0 ? String(sv) : '';
-          renderCalc(sctx);
+          var subN = parseInt(chipSub.getAttribute('data-chip-sub'), 10);
+          if (amtNum(sctx) > 0){
+            /* a number is being entered: the − chip corrects it in
+               place (clamped at empty), and the amount pulses so the
+               tap visibly registers */
+            var sv = amtNum(sctx) - subN;
+            amounts[sctx] = sv > 0 ? String(sv) : '';
+            renderCalc(sctx);
+            bumpAmt(sbox);
+          } else {
+            /* nothing being entered: the − chip is correction-only,
+               so it must NOT change LP on its own. Wiggle the amount
+               row toward the number chips instead of ignoring the
+               tap, so the press still gets a visible answer. */
+            hintCalc(sbox);
+          }
           return;
         }
         var clr = ev.target.closest('[data-k="clr"]');
@@ -1345,7 +1424,7 @@
           return;
         }
         var act = ev.target.closest('[data-act]');
-        if (act && !act.disabled){
+        if (act){
           var abox = act.closest('.calc'); var actx = abox.getAttribute('data-ctx');
           var ap = ctxPlayer(actx);
           var kind = act.getAttribute('data-act');
@@ -1354,6 +1433,11 @@
           } else {
             var n = amtNum(actx);
             if (n > 0){ doOp({ p:ap, kind:kind, amt:n }); amounts[actx] = ''; renderCalc(actx); }
+            /* nothing entered yet: wiggle the amount row toward the
+               chips instead of ignoring the tap (the buttons are
+               dimmed via .off, never disabled, precisely so this tap
+               still gets an answer) */
+            else hintCalc(abox);
           }
           return;
         }
