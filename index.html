@@ -81,8 +81,8 @@
          under the clock / notch in standalone mode, so the content pads
          itself clear of it (insets are 0 in a normal browser tab, so the
          layout there is unchanged) */
-      #app{ max-width:600px; margin:0 auto; padding:calc(4px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px)); height:100dvh; display:flex; flex-direction:column; }
-      #view-solo,#view-remote{ flex:1; min-height:0; display:flex; flex-direction:column; }
+      #app{ max-width:600px; margin:0 auto; padding:calc(4px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px)); height:100dvh; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; }
+      #view-solo,#view-remote{ flex:0 1 auto; min-height:0; display:flex; flex-direction:column; }
       /* the calculator panel hugs its content instead of stretching to
          fill the screen: leftover height used to sit inside the panel
          as big blank gaps around the number buttons */
@@ -298,9 +298,9 @@
       /* two stages: lobby (room create / join only, no calculator) and
          battle (shown automatically once connected). */
       #view-remote{ overflow:hidden; }
-      #remoteLobby{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
-      #remoteBattle{ flex:1; min-height:0; display:flex; flex-direction:column; }
-      #remoteBattle #remoteCalc{ flex:1; min-height:0; display:flex; }
+      #remoteLobby{ flex:0 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+      #remoteBattle{ flex:0 1 auto; min-height:0; display:flex; flex-direction:column; }
+      #remoteBattle #remoteCalc{ flex:none; min-height:0; display:flex; }
       .battlebar{ display:flex; align-items:center; gap:8px; margin-bottom:6px; flex:none; }
       .battlebar .sp{ flex:1; }
       .battlebar .barbtn{ min-height:40px; }
