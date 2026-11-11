@@ -11,7 +11,7 @@
          black-translucent lets the page's own background run behind the
          clock / battery (content is kept clear via the safe-area padding
          on #app below). -->
-    <meta name="theme-color" content="#0d0904" />
+    <meta name="theme-color" content="#040918" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,31 +19,39 @@
     <title>ラッシュデュエル ライフ電卓</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
       :root{
-        /* Yu-Gi-Oh skin: Millennium gold + ancient stone + card-frame browns.
-           Variable names kept from the previous skin so every rule that
-           referenced them (LP glow, chips, status, toast…) re-themes too. */
-        --bg:#0d0904;
-        --bg-panel:#171106;
-        --bg-panel2:#231a0d;
-        --line:#77602a;
-        --line-soft:#3a2f16;
-        --ink:#f6edd6;
-        --ink-dim:#cfc09c;
-        --ink-faint:#93835f;
-        --cyan:#e8b84b;
-        --cyan-deep:#a07d22;
-        --rose:#e0528a;
-        --red:#ff4655;
-        --red-deep:#8f1d2c;
-        --green:#2fe6a7;
-        --green-deep:#0d7a58;
-        --amber:#ffc53d;
-        --gold-hi:#ffe08a;
+        /* Master Duel / Blue-Eyes skin: deep duel-field navy, glowing cyan
+           lines, silver plate buttons. Variable names kept from the
+           previous skin so every rule that referenced them (LP glow,
+           chips, status, toast…) re-themes too. No emblem / triangle
+           motif — colour and frame language only. */
+        --bg:#040918;
+        --bg-panel:#0a142e;
+        --bg-panel2:#0d1a3a;
+        --line:#2b4a7d;
+        --line-soft:#1b2c52;
+        --line-bright:#57c8ff;
+        --ink:#e8f2ff;
+        --ink-dim:#9db4d4;
+        --ink-faint:#5f7699;
+        --cyan:#38cfff;
+        --cyan-deep:#1e7fff;
+        --cyan-hi:#aeeaff;
+        --ice:#eaf6ff;
+        --silver-hi:#f4f9ff;
+        --silver:#c9d9ee;
+        --silver-lo:#8ea9c9;
+        --rose:#ff5b74;
+        --red:#ff3b57;
+        --red-deep:#a3132b;
+        --green:#2fe6c8;
+        --green-deep:#0d7a6e;
+        --amber:#ffd968;
+        --gold-hi:#aeeaff;
         --p1:var(--cyan);
         --p2:var(--rose);
         --radius:10px;
@@ -52,19 +60,19 @@
       html,body{ margin:0; padding:0; overscroll-behavior:none; overscroll-behavior-y:none; }
       /* the root gets the same base colour as the body so any area the
          browser paints outside the body (status-bar / safe areas in
-         standalone mode) is the stone-wall base, never a black strip */
+         standalone mode) is the duel-field base, never a black strip */
       html{ overscroll-behavior:none; background:var(--bg); }
       body{
-        /* stone wall: warm dark base, a faint woven diamond pattern carved
-           in gold at 2.5% (two repeating diagonal lines), a soft gold glow
-           from above and a trap-magenta warmth at the lower corner. All
-           static gradients — no animation cost, same battery profile. */
+        /* Master Duel field: deep navy, a faint hex-grid weave, cyan
+           light falling from the top of the field and a deep blue wash
+           at the lower corner. All static gradients — no animation
+           cost, same battery profile. */
         background:
-          radial-gradient(900px 480px at 85% -10%, rgba(146,104,32,.22), transparent 60%),
-          radial-gradient(760px 520px at -10% 110%, rgba(124,36,73,.16), transparent 60%),
-          repeating-linear-gradient(45deg, rgba(232,184,75,.028) 0 2px, transparent 2px 26px),
-          repeating-linear-gradient(-45deg, rgba(232,184,75,.028) 0 2px, transparent 2px 26px),
-          var(--bg);
+          radial-gradient(820px 420px at 50% -12%, rgba(56,160,255,.20), transparent 62%),
+          radial-gradient(700px 500px at 110% 108%, rgba(30,80,200,.14), transparent 60%),
+          repeating-linear-gradient(60deg, rgba(87,200,255,.035) 0 1px, transparent 1px 34px),
+          repeating-linear-gradient(-60deg, rgba(87,200,255,.035) 0 1px, transparent 1px 34px),
+          linear-gradient(180deg,#060f2a 0%, #040918 55%, #02040c 100%);
         color:var(--ink);
         font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
         -webkit-font-smoothing:antialiased;
@@ -75,7 +83,7 @@
       }
       html{ height:100%; }
       button{ font-family:inherit; touch-action:manipulation; cursor:pointer; }
-      .num{ font-family:"Cinzel","Zen Kaku Gothic New",sans-serif; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+      .num{ font-family:"Rajdhani","Zen Kaku Gothic New",sans-serif; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
 
       /* safe-area insets: with the translucent status bar the page extends
          under the clock / notch in standalone mode, so the content pads
@@ -91,124 +99,129 @@
 
       /* ---------- mode bar ---------- */
       .modebar{ display:flex; gap:5px; align-items:stretch; margin:0 0 4px; flex-wrap:nowrap; flex:none; }
-      .seg{ display:flex; flex:1 1 auto; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:3px; gap:3px; min-width:0; }
+      .seg{ display:flex; flex:1 1 auto; background:rgba(10,20,46,.85); border:1px solid var(--line); padding:3px; gap:3px; min-width:0; clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px); }
       .seg button{
         flex:1; border:0; background:transparent; color:var(--ink-dim);
-        font-weight:700; font-size:14px; border-radius:9px; padding:5px 2px; min-height:38px; white-space:nowrap;
+        font-weight:700; font-size:14px; padding:5px 2px; min-height:38px; white-space:nowrap;
+        clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);
       }
-      .seg button[aria-pressed="true"]{ background:linear-gradient(180deg,#f0cd72,#c9962e); color:#2e2003; box-shadow:inset 0 0 0 1px #ffe9ad, inset 0 1px 0 #fff8dd, 0 0 14px rgba(232,184,75,.25); }
+      .seg button[aria-pressed="true"]{ background:linear-gradient(180deg,var(--cyan-hi),var(--cyan)); color:#04101f; box-shadow:inset 0 1px 0 #fff, 0 0 14px rgba(56,207,255,.35); }
       .barbtn{
-        border:1px solid var(--line); background:var(--bg-panel); color:var(--ink);
-        border-radius:12px; padding:0 12px; font-weight:700; font-size:14px; min-height:42px;
+        border:1px solid var(--line); background:rgba(10,20,46,.85); color:var(--ink);
+        padding:0 12px; font-weight:700; font-size:14px; min-height:42px;
         display:inline-flex; align-items:center; gap:6px; flex:none;
+        clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
       }
       @media (max-width:520px){
         .barbtn{ padding:0 10px; }
         .barbtn .barlabel{ display:none; }
         .seg button{ font-size:13px; }
       }
-      .barbtn:active{ transform:translateY(1px); }
+      .barbtn:active{ background:var(--bg-panel2); transform:translateY(1px); }
       #soundBtn[aria-pressed="false"]{ color:var(--ink-faint); }
       .barbtn svg{ width:18px; height:18px; flex:none; }
-      .barbtn.danger{ color:#ffb3ba; border-color:#5b2333; }
+      .barbtn.danger{ color:#ffb3bc; border-color:#5b2333; }
 
       /* ---------- player card ---------- */
-      /* the player card IS a Yu-Gi-Oh card: bronze-gold double frame,
-         a cream name bar across the top, a level star, and the LP sitting
-         in a dark "art window" below it. */
+      /* the player card IS a Master Duel LP plate: deep navy panel with
+         angled cut corners, a glowing cyan top edge, and the LP number
+         large and italic in ice white. No name bar in solo (labels are
+         hidden there); remote keeps a plain name row. */
       .pcard{
-        position:relative; background:linear-gradient(165deg,#4a3517 0%, #2e2110 48%, #1f1508 100%);
-        border:2px solid #a8842f; border-radius:var(--radius);
-        box-shadow:inset 0 0 0 2px #120d05, inset 0 0 0 4px rgba(232,184,75,.32), 0 6px 18px rgba(0,0,0,.45);
+        position:relative; background:linear-gradient(165deg,#12234d 0%, #0a142e 55%, #060d22 100%);
+        border:1px solid var(--line);
+        clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px);
+        box-shadow:inset 0 0 0 1px rgba(87,200,255,.12), inset 0 1px 0 rgba(174,234,255,.18), 0 8px 26px rgba(0,0,0,.5);
         padding:7px 10px 6px; margin-bottom:4px; overflow:hidden; flex:none;
       }
-      .pcard::before{ content:""; position:absolute; inset:0 auto 0 0; width:4px; background:linear-gradient(180deg,var(--gold-hi),var(--ac,#888) 55%,#6d5516); z-index:2; }
-      .pcard::after{ content:""; position:absolute; inset:5px; border:1px solid rgba(232,184,75,.25); border-radius:6px; pointer-events:none; z-index:1; }
+      /* glowing top edge, like the MD plate highlight */
+      .pcard::before{ content:""; position:absolute; top:0; left:18px; right:0; height:2px; background:linear-gradient(90deg, var(--cyan), rgba(56,207,255,0) 65%); box-shadow:0 0 10px rgba(56,207,255,.7); z-index:2; }
+      .pcard::after{ content:""; position:absolute; inset:5px; border:1px solid rgba(87,200,255,.10); pointer-events:none; z-index:1; }
       .pcard[data-p="0"]{ --ac:var(--p1); }
       .pcard[data-p="1"]{ --ac:var(--p2); }
       .phead{
         display:flex; align-items:center; gap:8px; position:relative; z-index:2;
-        background:linear-gradient(180deg,#f4e8c8,#dcc794); border:1px solid #8a6d2f; border-radius:5px;
-        padding:3px 8px; box-shadow:inset 0 1px 0 #fffbe8, 0 1px 2px rgba(0,0,0,.4);
+        background:transparent; border:0; padding:2px 2px 0;
       }
-      /* level stars along the name bar (hidden on the compact opponent strip) */
-      .phead::after{ content:"★★★★★★★"; margin-left:auto; color:#e07b1f; font-size:9px; letter-spacing:1px; line-height:1; text-shadow:0 0 1px #b35c00; flex:none; }
+      /* solo hides labels: the whole head row (dot only) goes away */
+      #soloCard .phead{ display:none; }
       .pdot{
-        /* the player dot becomes a level star */
-        width:15px; height:15px; border-radius:0; flex:none;
-        background:linear-gradient(180deg,#ffb340,#e07b1f);
-        clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
-        filter:drop-shadow(0 0 3px rgba(255,160,40,.55));
+        /* the player dot becomes a small glowing diamond */
+        width:11px; height:11px; border-radius:0; flex:none;
+        background:linear-gradient(135deg,var(--cyan-hi),var(--cyan-deep));
+        transform:rotate(45deg);
+        box-shadow:0 0 6px rgba(56,207,255,.6);
       }
+      .pcard[data-p="1"] .pdot{ background:linear-gradient(135deg,#ffc2cb,var(--rose)); box-shadow:0 0 6px rgba(255,91,116,.6); }
       .pname{
-        color:#2e2005; font-weight:900; font-size:15px; padding:2px 2px; min-height:26px;
+        color:var(--ink); font-weight:900; font-size:15px; padding:2px 2px; min-height:26px;
         display:inline-flex; align-items:center; max-width:260px; min-width:0;
         overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
       }
-      .ptag{ margin-left:auto; font-size:11px; font-weight:700; color:#7a5f1e; letter-spacing:.08em; white-space:nowrap; }
-      .phead:has(.ptag)::after{ margin-left:0; }
-      /* art window: the LP lives in the card's dark illustration frame */
+      .ptag{ margin-left:auto; font-size:11px; font-weight:700; color:var(--ink-faint); letter-spacing:.08em; white-space:nowrap; }
+      /* the LP sits directly on the plate — no inner art window */
       .lpwrap{
-        display:flex; align-items:baseline; gap:10px; margin-top:6px; position:relative; z-index:2;
-        background:radial-gradient(120% 150% at 50% 0%, #251b0d 0%, #0d0903 72%);
-        border:1px solid rgba(232,184,75,.5); border-radius:6px; padding:2px 12px 4px;
-        box-shadow:inset 0 0 18px rgba(0,0,0,.75), inset 0 0 0 1px #000;
+        display:flex; align-items:baseline; gap:10px; margin-top:2px; position:relative; z-index:2;
+        background:none; border:0; border-radius:0; padding:2px 4px 0;
+        box-shadow:none;
       }
-      .lplabel{ font-size:12px; font-weight:900; color:var(--ac); letter-spacing:.22em; flex:none; }
+      .lplabel{ font-family:"Rajdhani",sans-serif; font-size:14px; font-weight:700; color:var(--ac); letter-spacing:.3em; flex:none; text-shadow:0 0 10px rgba(56,207,255,.6); }
       .lp{
         /* Fixed-width slot sized for the system maximum "99900" (5 digits, no
            thousands separator): the box never grows or shrinks with the digit
            count, so the card layout, the LP bar and everything around the
            number stay put. Right-aligned inside the slot, so the right edge
            (and the slot itself) is always fixed. */
-        display:inline-block; flex:none; width:3.15em; min-width:3.15em; max-width:3.15em; text-align:right;
-        font-size:clamp(52px,15vw,84px); font-weight:900; line-height:1.02; color:#ffedb0;
+        display:inline-block; flex:none; width:3.1em; min-width:3.1em; max-width:3.1em; text-align:right;
+        font-style:italic;
+        font-size:clamp(52px,15vw,84px); font-weight:700; line-height:1.02; color:var(--ice);
         /* battery: glow kept to two layers — the old third layer (96-110px
            blur) was the single most expensive paint on a phone GPU and is
            nearly invisible at these sizes. */
-        text-shadow:0 0 12px rgba(232,184,75,.5), 0 0 32px rgba(232,184,75,.28);
+        text-shadow:0 0 14px rgba(120,210,255,.55), 0 0 42px rgba(56,160,255,.30), 0 2px 0 rgba(10,40,90,.9);
       }
-      .pcard[data-p="1"] .lp{ text-shadow:0 0 12px rgba(224,82,138,.5), 0 0 32px rgba(224,82,138,.28); }
-      .lp.low{ color:var(--amber); text-shadow:0 0 12px rgba(255,197,61,.55), 0 0 32px rgba(255,197,61,.3); }
-      .lp.ko{ color:var(--red); text-shadow:0 0 14px rgba(255,70,85,.6), 0 0 36px rgba(255,70,85,.35); }
+      .pcard[data-p="1"] .lp{ text-shadow:0 0 14px rgba(255,120,145,.5), 0 0 42px rgba(255,59,87,.28), 0 2px 0 rgba(60,8,20,.9); }
+      .lp.low{ color:var(--amber); text-shadow:0 0 14px rgba(255,217,104,.55), 0 0 42px rgba(255,180,40,.3); }
+      .lp.ko{ color:var(--red); text-shadow:0 0 16px rgba(255,59,87,.65), 0 0 46px rgba(255,59,87,.35); }
       /* solo: the LP number is the hero of the whole screen */
       #soloCard .pcard{ padding:8px 10px 7px; }
-      #soloCard .lp{ font-size:clamp(76px,22vw,138px); letter-spacing:.01em; }
-      #soloCard .pname{ font-size:13px; min-height:24px; color:var(--ink-dim); }
+      #soloCard .lp{ font-size:clamp(76px,22vw,132px); letter-spacing:.01em; }
       #soloCard .lplabel{ font-size:13px; }
       .kobadge{
         /* out of flow (card corner) so appearing at K.O. never widens the LP row */
         display:none; position:absolute; top:10px; right:12px; z-index:3;
-        font-family:"Cinzel",sans-serif; font-weight:900; font-size:16px; color:#fff;
-        background:var(--red); border-radius:8px; padding:3px 10px; letter-spacing:.14em;
-        box-shadow:0 0 18px rgba(255,70,85,.55);
+        font-family:"Rajdhani",sans-serif; font-weight:700; font-size:16px; color:#fff;
+        background:linear-gradient(180deg,#ff5b74,var(--red-deep)); padding:3px 12px 2px; letter-spacing:.18em;
+        clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);
+        box-shadow:0 0 18px rgba(255,59,87,.55);
       }
       /* battery: pulse a few times when K.O. happens, then rest static —
          an infinite pulse keeps the compositor waking up for the whole
          rest of the duel. */
       .pcard.is-ko .kobadge{ display:inline-block; animation:kopulse .55s ease-in-out 6; }
       @keyframes kopulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.07);} }
-      .lpbar{ height:7px; border-radius:99px; background:#0c0803; border:1px solid rgba(232,184,75,.35); margin-top:5px; overflow:hidden; position:relative; z-index:2; }
-      .lpbar > i{ display:block; height:100%; border-radius:99px; background:linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0) 55%), var(--ac); transition:width .45s cubic-bezier(.22,1,.36,1); }
-      .lpbar.low > i{ background:var(--amber); }
-      .lpbar.ko > i{ background:var(--red); }
+      /* segmented LP gauge, angled like the MD bar */
+      .lpbar{ height:8px; background:#050b1e; border:1px solid rgba(87,200,255,.35); margin-top:5px; overflow:hidden; position:relative; z-index:2; clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%); }
+      .lpbar > i{ display:block; height:100%; background:linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 55%), linear-gradient(90deg,#1e7fff,var(--cyan)); box-shadow:0 0 12px rgba(56,207,255,.55); transition:width .45s cubic-bezier(.22,1,.36,1); }
+      .lpbar.low > i{ background:linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0) 55%), linear-gradient(90deg,#e8930c,var(--amber)); }
+      .lpbar.ko > i{ background:linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0) 55%), var(--red); }
       .flash-dmg{ animation:flashdmg .55s ease-out; }
       .flash-heal{ animation:flashheal .55s ease-out; }
-      @keyframes flashdmg{ 0%{ box-shadow:0 0 0 3px var(--red), 0 0 44px rgba(255,70,85,.55);} 100%{ box-shadow:0 0 0 0 transparent;} }
-      @keyframes flashheal{ 0%{ box-shadow:0 0 0 3px var(--green), 0 0 44px rgba(47,230,167,.5);} 100%{ box-shadow:0 0 0 0 transparent;} }
+      @keyframes flashdmg{ 0%{ box-shadow:0 0 0 3px var(--red), 0 0 44px rgba(255,59,87,.5);} 100%{ box-shadow:0 0 0 0 transparent;} }
+      @keyframes flashheal{ 0%{ box-shadow:0 0 0 3px var(--green), 0 0 44px rgba(47,230,200,.45);} 100%{ box-shadow:0 0 0 0 transparent;} }
       .shake{ animation:shake .4s ease-in-out; }
       @keyframes shake{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 45%{transform:translateX(5px);} 70%{transform:translateX(-3px);} 90%{transform:translateX(2px);} }
 
       /* ---------- keypad block ---------- */
-      /* the keypad block is a stone tablet with a gold-trimmed edge */
-      .calc{ background:linear-gradient(180deg,#1e1609,#130e06); border:1px solid var(--line); border-radius:var(--radius); box-shadow:inset 0 1px 0 rgba(232,184,75,.18), inset 0 0 0 1px rgba(0,0,0,.5); padding:8px 10px 9px; margin-bottom:0; display:flex; flex-direction:column; flex:1; min-height:0; }
+      /* the keypad block is an MD console panel with angled corners */
+      .calc{ background:linear-gradient(180deg, rgba(16,30,64,.92), rgba(7,13,32,.94)); border:1px solid var(--line); clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px); box-shadow:inset 0 0 0 1px rgba(87,200,255,.10), inset 0 1px 0 rgba(174,234,255,.14); padding:8px 10px 9px; margin-bottom:0; display:flex; flex-direction:column; flex:1; min-height:0; }
       /* The amount being built is the readout of the keypad, so it gets
          the big type: a single centred row, nothing else competing with
          it. The correction tools (C and the − chips) live in their own
          spread-out row directly beneath it — see .subrow — because they
          edit THIS number, and grouping them here says so at a glance. */
       .amtdisp{ display:flex; align-items:center; justify-content:center; padding:2px 4px 0; height:56px; min-height:56px; flex:none; width:100%; }
-      .amt{ font-size:clamp(38px,10.5vw,48px); font-weight:900; color:#ffe9a8; line-height:1; white-space:nowrap; text-align:center; display:block; text-shadow:0 0 14px rgba(232,184,75,.35); }
+      .amt{ font-size:clamp(38px,10.5vw,48px); font-weight:700; color:var(--cyan-hi); line-height:1; white-space:nowrap; text-align:center; display:block; text-shadow:0 0 14px rgba(56,207,255,.45); }
       .amt.empty{ color:var(--ink-faint); text-shadow:none; }
       /* amount is built ONLY from the denomination buttons (100 / 500 /
          1000 / 2000) — no digit keypad, and no + sign on the buttons:
@@ -220,52 +233,51 @@
          smaller than the old paired grid while staying >=44px tall. */
       .subrow{ display:flex; gap:6px; align-items:stretch; padding:4px 0 8px; flex:none; width:100%; }
       .clrbtn{
-        /* same raised button face as the neighbouring chips (gradient,
-           top highlight, bottom shade, drop shadow, press-down) so C
-           reads as a button, not a flat label — in a deep red-brown
-           that keeps it distinct from both the gold add chips and the
-           magenta − chips beside it */
-        border:1px solid #9a4a3a; background:linear-gradient(180deg,#74362b,#4a1f18); color:#ffe3de; border-radius:9px;
-        font-family:"Cinzel","Zen Kaku Gothic New",sans-serif;
-        font-weight:900; font-size:16px; height:42px; min-height:42px; padding:0 4px; flex:1 1 0; min-width:0;
+        /* steel-blue utility face, matching the sample's C button */
+        border:1px solid #54749f; background:linear-gradient(180deg,#33507e,#1b2c52); color:var(--ice);
+        font-family:"Rajdhani","Zen Kaku Gothic New",sans-serif;
+        font-weight:700; font-size:17px; height:42px; min-height:42px; padding:0 4px; flex:1 1 0; min-width:0;
         display:flex; align-items:center; justify-content:center; line-height:1;
+        clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px);
         text-shadow:0 1px 2px rgba(0,0,0,.5);
-        box-shadow:inset 0 1px 0 rgba(255,200,190,.4), inset 0 -2px 0 rgba(20,4,2,.55), 0 2px 6px rgba(0,0,0,.35);
+        box-shadow:inset 0 1px 0 rgba(220,242,255,.35), inset 0 -2px 0 rgba(2,6,18,.6);
       }
-      .clrbtn:active{ background:linear-gradient(180deg,#5a2a21,#38160f); transform:translateY(1px); box-shadow:inset 0 1px 0 rgba(255,200,190,.25), inset 0 -1px 0 rgba(20,4,2,.55); }
+      .clrbtn:active{ background:linear-gradient(180deg,#243c66,#14233f); transform:translateY(1px); }
       /* Addition buttons keep a fixed, modest height instead of stretching
          to fill the tablet: the grid area still flexes, but the rows are
          capped and centred in it, so extra screen height becomes even
          breathing room around the group rather than taller buttons.
          54px rows stay comfortably above the 44px tap minimum. */
       .quick{ display:grid; grid-template-columns:1fr; grid-template-rows:repeat(4,54px); gap:6px; flex:1; min-height:0; align-content:center; }
-      /* number chips wear a monster card's tan-gold face; − chips are trap cards */
+      /* number chips wear a Blue-Eyes silver plate face; − chips are red */
       .qbtn{
-        border:1px solid #8a5f1d; background:linear-gradient(180deg,#e7b264,#bd8438); color:#33200a;
-        border-radius:8px; font-weight:800; font-size:clamp(20px,5.6vw,26px); padding:4px 0; min-height:44px;
-        text-shadow:0 1px 0 rgba(255,240,200,.5);
-        box-shadow:inset 0 1px 0 rgba(255,246,214,.65), inset 0 -2px 0 rgba(90,58,10,.45);
+        border:1px solid #d9e9fb; background:linear-gradient(180deg,var(--silver-hi),var(--silver) 52%,var(--silver-lo)); color:#0a1c3d;
+        font-weight:700; font-size:clamp(20px,5.6vw,26px); padding:4px 0; min-height:44px; letter-spacing:.05em;
+        clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+        text-shadow:0 1px 0 rgba(255,255,255,.6);
+        box-shadow:inset 0 1px 0 #fff, inset 0 -2px 0 rgba(30,60,110,.4);
       }
-      .qbtn:active{ background:#a8742c; transform:translateY(1px); }
+      .qbtn:active{ background:linear-gradient(180deg,#b9cee8,#84a3c9); transform:translateY(1px); }
       .qbtn.qsub{
-        background:linear-gradient(180deg,#b03a6d,#7e2549); border-color:#8f2f58; color:#ffe0ee;
+        background:linear-gradient(180deg,#d92b47,#8f1226); border-color:#ff7d90; color:#ffe3e8;
         text-shadow:0 1px 2px rgba(0,0,0,.45);
-        box-shadow:inset 0 1px 0 rgba(255,190,220,.4), inset 0 -2px 0 rgba(40,4,20,.5);
+        box-shadow:inset 0 1px 0 rgba(255,190,200,.4), inset 0 -2px 0 rgba(40,2,10,.55);
       }
-      .qbtn.qsub:active{ background:#5f1a38; }
-      /* the − chips in the correction row: same trap-card face as ever,
+      .qbtn.qsub:active{ background:#6d0d1e; }
+      /* the − chips in the correction row: same red face as ever,
          just at utility size, spread evenly beside C */
-      .subrow .qbtn{ flex:1 1 0; min-width:0; height:42px; min-height:42px; padding:2px 0; font-size:clamp(13px,3.8vw,17px); border-radius:9px; }
+      .subrow .qbtn{ flex:1 1 0; min-width:0; height:42px; min-height:42px; padding:2px 0; font-size:clamp(13px,3.8vw,17px); }
       .acts{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; margin-top:6px; flex:none; }
       .act{
-        border-radius:12px; font-weight:900; font-size:18px; padding:8px 0; min-height:48px; color:#fff;
+        font-weight:900; font-size:18px; padding:8px 0; min-height:48px; color:#fff;
         display:flex; align-items:center; justify-content:center; gap:8px;
+        clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);
       }
-      .act.dmg{ background:linear-gradient(180deg,#d92b3f,#a31326); border:1px solid #ff6b7a; box-shadow:0 4px 18px rgba(255,70,85,.28); }
-      .act.dmg:active{ background:#a31326; }
-      .act.heal{ background:linear-gradient(180deg,#12b981,#0a7a58); border:1px solid #3fe0ae; box-shadow:0 4px 18px rgba(47,230,167,.22); }
-      .act.heal:active{ background:#0a7a58; }
-      .act.half{ background:#251b0d; border:1px solid var(--line); color:var(--amber); font-size:20px; padding:8px 16px; min-width:84px; }
+      .act.dmg{ background:linear-gradient(180deg,#e02444,#9c1128); border:1px solid #ff6b7f; box-shadow:0 0 16px rgba(255,59,87,.30), inset 0 1px 0 rgba(255,200,208,.4); }
+      .act.dmg:active{ background:#7d0d20; }
+      .act.heal{ background:linear-gradient(180deg,#0d9fd8,#075a96); border:1px solid #54d4ff; box-shadow:0 0 16px rgba(56,207,255,.32), inset 0 1px 0 rgba(200,242,255,.45); }
+      .act.heal:active{ background:#064a7c; }
+      .act.half{ background:#0a1734; border:1px solid var(--line-bright); color:var(--cyan-hi); font-family:"Rajdhani",sans-serif; font-size:21px; padding:8px 16px; min-width:84px; text-shadow:0 0 8px rgba(56,207,255,.5); }
       /* symbol-only actions: the glyph + color carry the meaning, no word labels */
       .act.dmg,.act.heal{ font-size:30px; line-height:1; padding:5px 0; }
       .calc.mini .act.dmg,.calc.mini .act.heal{ font-size:26px; }
@@ -283,7 +295,7 @@
       @keyframes amtbump{ 0%{ transform:scale(1);} 35%{ transform:scale(1.18);} 100%{ transform:scale(1);} }
 
       /* compact variant (legacy hooks kept minimal) */
-      .calc.mini{ padding:7px; margin:6px 0 0; background:rgba(16,11,4,.6); }
+      .calc.mini{ padding:7px; margin:6px 0 0; background:rgba(7,13,32,.85); }
       .calc.mini .amtdisp{ height:48px; min-height:48px; padding-bottom:2px; }
       .calc.mini .amt{ font-size:32px; }
       .calc.mini .quick{ grid-template-rows:repeat(4,48px); gap:5px; }
@@ -304,7 +316,7 @@
       .battlebar{ display:flex; align-items:center; gap:8px; margin-bottom:6px; flex:none; }
       .battlebar .sp{ flex:1; }
       .battlebar .barbtn{ min-height:40px; }
-      .rpanel{ background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px; margin-bottom:8px; flex:none; }
+      .rpanel{ background:var(--bg-panel); border:1px solid var(--line); clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); padding:12px; margin-bottom:8px; flex:none; }
       .rpanel.collapsed .hideable{ display:none !important; }
       .rpanel.collapsed .roomcode{ font-size:20px; padding:4px 10px; }
       .rpanel.collapsed .codebox{ margin:6px 0; }
@@ -315,53 +327,55 @@
       /* own card: full size, directly above the keypad */
       #remoteCards .pcard.is-self{ order:2; padding:10px 12px 9px; }
       #remoteCards .pcard.is-self .lp{ font-size:clamp(58px,16vw,88px); }
-      #remoteCards .pcard.is-self .pname{ color:#2e2005; }
+      #remoteCards .pcard.is-self .pname{ color:var(--ink); }
       #remoteCards .pcard.is-self .pname{ font-size:14px; max-width:220px; }
-      #remoteCards .pcard.is-self .lpbar{ margin-top:6px; height:7px; }
+      #remoteCards .pcard.is-self .lpbar{ margin-top:6px; height:8px; }
       /* opponent: LP-only strip */
       #remoteCards .pcard.is-opp{ order:1; display:flex; align-items:center; gap:10px; padding:7px 12px; }
       #remoteCards .pcard.is-opp .phead{ flex:0 1 auto; min-width:0; }
       #remoteCards .pcard.is-opp .pname{ font-size:13px; max-width:120px; pointer-events:none; }
       #remoteCards .pcard.is-opp .lpwrap{ margin:0 0 0 auto; gap:6px; flex:none; background:none; border:0; box-shadow:none; padding:0; }
-      #remoteCards .pcard.is-opp .phead::after{ display:none; }
       #remoteCards .pcard.is-opp .lp{ font-size:38px; }
       #remoteCards .pcard.is-opp .lpbar{ display:none; }
       .rpanel h2{ margin:0 0 6px; font-size:17px; font-weight:900; }
       .rpanel p{ margin:0 0 10px; color:var(--ink-dim); font-size:13.5px; line-height:1.65; }
-      .status{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; padding:7px 10px; border:1px solid var(--line); border-radius:10px; background:#0e0a04; margin-bottom:8px; flex:none; }
+      .status{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; padding:7px 10px; border:1px solid var(--line); background:#050b1e; margin-bottom:8px; flex:none; clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px); }
       .sdot{ width:11px; height:11px; border-radius:50%; background:var(--ink-faint); flex:none; }
       .sdot.on{ background:var(--green); box-shadow:0 0 9px var(--green); }
       .sdot.wait{ background:var(--amber); box-shadow:0 0 9px var(--amber); animation:kopulse 1.2s ease-in-out 4; }
       .sdot.err{ background:var(--red); box-shadow:0 0 9px var(--red); }
       .bigbtn{
-        width:100%; border-radius:12px; border:1px solid #ffe9ad; color:#2e2003;
-        background:linear-gradient(180deg,#ffe08a,#d9a83e 55%,#b9862a); font-weight:900; font-size:16px; padding:10px; min-height:48px;
-        box-shadow:0 4px 14px rgba(217,168,62,.28), inset 0 1px 0 #fff8dd;
+        width:100%; border:1px solid var(--cyan-hi); color:#04101f;
+        background:linear-gradient(180deg,var(--cyan-hi),var(--cyan) 55%,#1e9fff); font-weight:900; font-size:16px; padding:10px; min-height:48px;
+        clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px);
+        box-shadow:0 0 16px rgba(56,207,255,.30), inset 0 1px 0 #fff;
       }
       .bigbtn:active{ filter:brightness(.92); }
-      .bigbtn.ghost{ background:#251b0d; color:var(--cyan); }
+      .bigbtn.ghost{ background:#0a1734; color:var(--cyan); border-color:var(--line); box-shadow:none; }
       .codebox{ display:flex; gap:8px; align-items:stretch; margin:10px 0; flex-wrap:wrap; }
       .roomcode{
-        font-family:"Cinzel",sans-serif; font-weight:900; font-size:30px; letter-spacing:.22em; color:#ffd968;
-        background:#0e0a04; border:2px solid var(--cyan-deep); border-radius:10px; padding:8px 14px; text-align:center; flex:1; min-width:170px;
-        box-shadow:inset 0 0 12px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,224,138,.25);
+        font-family:"Rajdhani",sans-serif; font-weight:700; font-size:30px; letter-spacing:.22em; color:var(--cyan-hi);
+        background:#050b1e; border:1px solid var(--line-bright); padding:8px 14px; text-align:center; flex:1; min-width:170px;
+        clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+        box-shadow:inset 0 0 12px rgba(0,0,0,.7);
+        text-shadow:0 0 12px rgba(56,207,255,.5);
       }
       .linkrow{ display:flex; gap:8px; }
       .linkrow input{
-        flex:1; min-width:0; background:#0e0a04; border:1px solid var(--line); border-radius:10px; color:var(--ink-dim);
+        flex:1; min-width:0; background:#050b1e; border:1px solid var(--line); border-radius:10px; color:var(--ink-dim);
         font-size:12.5px; padding:10px; min-height:48px;
       }
-      .copybtn{ border:1px solid var(--line); background:#251b0d; color:#fff; border-radius:10px; font-weight:800; padding:0 16px; min-height:48px; white-space:nowrap; }
+      .copybtn{ border:1px solid var(--line); background:#12234d; color:#fff; border-radius:10px; font-weight:800; padding:0 16px; min-height:48px; white-space:nowrap; }
       .qrwrap{ display:flex; gap:14px; align-items:center; margin-top:12px; flex-wrap:wrap; }
       .qr{ background:#fff; padding:8px; border-radius:10px; line-height:0; }
       .qr img,.qr canvas{ width:132px !important; height:132px !important; }
       .qrnote{ color:var(--ink-dim); font-size:12.5px; line-height:1.6; max-width:250px; }
       .joinrow{ display:flex; gap:8px; }
       .joinrow input{
-        flex:1; min-width:0; text-transform:uppercase; background:#0e0a04; border:1px solid var(--line); border-radius:10px;
-        color:#fff; font-family:"Cinzel",sans-serif; font-weight:800; font-size:19px; letter-spacing:.18em; padding:10px 12px; min-height:52px; text-align:center;
+        flex:1; min-width:0; text-transform:uppercase; background:#050b1e; border:1px solid var(--line); border-radius:10px;
+        color:#fff; font-family:"Rajdhani",sans-serif; font-weight:700; font-size:19px; letter-spacing:.18em; padding:10px 12px; min-height:52px; text-align:center;
       }
-      .joinrow button{ border:1px solid var(--cyan-deep); background:#251b0d; color:var(--cyan); border-radius:10px; font-weight:900; padding:0 20px; min-height:52px; }
+      .joinrow button{ border:1px solid var(--line-bright); background:#12234d; color:var(--cyan); border-radius:10px; font-weight:900; padding:0 20px; min-height:52px; }
       .divider{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:12px; font-weight:700; margin:16px 0 12px; }
       .divider::before,.divider::after{ content:""; flex:1; height:1px; background:var(--line-soft); }
       .selhint{ font-size:12px; color:var(--ink-dim); margin:0 2px 6px; flex:none; }
@@ -380,38 +394,39 @@
       .hrow .who{ font-weight:800; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .hrow .who i{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
       .hrow .chg{ font-weight:800; font-size:16px; }
-      .hrow .chg.dmg{ color:#ff8b96; } .hrow .chg.heal{ color:#7df0cd; } .hrow .chg.set{ color:var(--amber); }
+      .hrow .chg.dmg{ color:#ff9aa8; } .hrow .chg.heal{ color:#7df0e4; } .hrow .chg.set{ color:var(--amber); }
       .hrow .after{ color:var(--ink-dim); font-size:14px; white-space:nowrap; }
-      .hrow .after b{ color:#fff; font-size:16px; display:inline-block; min-width:3.15em; text-align:right; }
+      .hrow .after b{ color:#fff; font-size:16px; display:inline-block; min-width:3.1em; text-align:right; }
       .hdel{ border:0; background:transparent; color:var(--ink-faint); border-radius:8px; min-width:40px; min-height:40px; font-size:16px; }
-      .hdel:active{ color:#ff8b96; background:#2a1408; }
+      .hdel:active{ color:#ff9aa8; background:#12234d; }
       .hempty{ color:var(--ink-faint); font-size:13.5px; text-align:center; padding:16px 0 6px; }
       /* history is a bottom sheet in every mode, so the calculator never scrolls */
       #historySec{
         position:fixed; inset:auto 0 0 0; max-height:74dvh; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; z-index:40;
-        background:#110c05; border-top:1px solid var(--line); border-radius:18px 18px 0 0; padding:6px 14px 26px;
-        box-shadow:0 -12px 40px rgba(0,0,0,.6);
+        background:#060d22; border-top:1px solid var(--line-bright); border-radius:18px 18px 0 0; padding:6px 14px 26px;
+        box-shadow:0 -12px 40px rgba(0,0,0,.6), 0 -2px 18px rgba(56,160,255,.18);
         transform:translateY(105%); transition:transform .28s ease;
       }
       #historySec.sheet{ transform:translateY(0); }
-      .sheetback{ position:fixed; inset:0; background:rgba(5,3,1,.6); z-index:39; }
+      .sheetback{ position:fixed; inset:0; background:rgba(2,5,16,.6); z-index:39; }
 
       /* ---------- modal / toast ---------- */
-      .modalback{ position:fixed; inset:0; background:rgba(5,3,1,.72); z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; }
-      .modal{ background:var(--bg-panel2); border:1px solid var(--line); border-radius:16px; padding:20px; max-width:360px; width:100%; }
+      .modalback{ position:fixed; inset:0; background:rgba(2,5,16,.74); z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; }
+      .modal{ background:linear-gradient(180deg,var(--bg-panel2),var(--bg-panel)); border:1px solid var(--line-bright); clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); padding:20px; max-width:360px; width:100%; box-shadow:0 0 30px rgba(56,160,255,.25); }
       .modal h3{ margin:0 0 8px; font-size:18px; font-weight:900; }
       .modal p{ margin:0 0 16px; color:var(--ink-dim); font-size:14px; line-height:1.6; }
       .modal .row{ display:flex; gap:8px; }
-      .modal button{ flex:1; border-radius:11px; font-weight:900; font-size:15px; padding:13px; min-height:52px; }
-      .modal .cancel{ background:#251b0d; border:1px solid var(--line); color:var(--ink); }
-      .modal .ok{ background:linear-gradient(180deg,#d92b3f,#a31326); border:1px solid #ff6b7a; color:#fff; }
+      .modal button{ flex:1; font-weight:900; font-size:15px; padding:13px; min-height:52px; border:0; clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px); }
+      .modal .cancel{ background:#12234d; border:1px solid var(--line); color:var(--ink); }
+      .modal .ok{ background:linear-gradient(180deg,#e02444,#9c1128); border:1px solid #ff6b7f; color:#fff; }
       .modal.modal-reset{ padding:14px; max-width:320px; }
       .modal.modal-reset .row{ gap:10px; }
       .modal.modal-reset button{ min-height:56px; font-size:16px; }
       #toast{
         position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); z-index:60;
-        background:#2b200d; border:1px solid var(--cyan-deep); color:#fff; font-weight:800; font-size:14px;
-        border-radius:99px; padding:11px 20px; opacity:0; pointer-events:none; transition:all .25s ease; max-width:92vw; text-align:center;
+        background:#0d1c40; border:1px solid var(--line-bright); color:#fff; font-weight:800; font-size:14px;
+        padding:11px 20px; opacity:0; pointer-events:none; transition:all .25s ease; max-width:92vw; text-align:center;
+        clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);
       }
       #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
       [hidden]{ display:none !important; }
