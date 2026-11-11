@@ -660,8 +660,11 @@
          pulses start at 0.575s and repeat every ~110ms up to the
          last onset at 2.03s; the landing attack starts at ~2.06s
          and has decayed by ~2.33s (the rest of the file is silence).
-         The raw bytes are fetched up front (no AudioContext needed);
-         decoding waits for the first gesture-created context. ---- */
+         The raw bytes are fetched up front (no AudioContext needed)
+         and decoded immediately through an OfflineAudioContext, so
+         the sample is ready before the first tap — decoding through
+         the playback context would stall until the first gesture
+         and leave the first roll on the synth fallback. ---- */
       var SE_ROLL_START = 0.575;
       var SE_LAND_START = 2.06, SE_LAND_DUR = 0.34, SE_GAIN = 0.9;
       /* the fixed roll length: first pulse → landing attack, i.e.
@@ -682,14 +685,34 @@
       }
       function decodeSe(){
         if (seBuffer || seDecoding || !seRaw) return;
-        var ctx = ensureAudio();
-        if (!ctx || typeof ctx.decodeAudioData !== 'function') return;
         seDecoding = true;
-        var ab = seRaw.slice(0); /* decode detaches its input; keep a copy for retries */
-        var done = function(buf){ seBuffer = buf; seDecoding = false; };
-        var fail = function(){ seDecoding = false; };
+        var settled = false;
+        var done = function(buf){ if (settled) return; settled = true; if (buf) seBuffer = buf; seDecoding = false; };
+        var fail = function(){ if (settled) return; settled = true; seDecoding = false; };
+        /* Decode through an OfflineAudioContext, NOT the playback
+           context: an offline context is exempt from the autoplay
+           policy, so the sample is decoded and ready at page load.
+           Decoding through the gesture-locked AudioContext stalls
+           until the first tap (iOS Safari never finishes it while
+           suspended) — the roll that happened to be running then
+           started on the synth fallback and picked up the sample's
+           landing mid-roll once decoding completed, which is why
+           only the FIRST calculation after loading the page ever
+           sounded different. decode detaches its input, so each
+           attempt gets its own slice of the kept raw bytes. */
+        var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (OAC){
+          try {
+            var octx = new OAC(1, 44100, 44100);
+            var op = octx.decodeAudioData(seRaw.slice(0), done, fail);
+            if (op && typeof op.then === 'function') op.then(done, fail);
+            return;
+          } catch(e){ /* fall through to the playback context */ }
+        }
+        var ctx = ensureAudio();
+        if (!ctx || typeof ctx.decodeAudioData !== 'function'){ fail(); return; }
         try {
-          var p = ctx.decodeAudioData(ab, done, fail);
+          var p = ctx.decodeAudioData(seRaw.slice(0), done, fail);
           if (p && typeof p.then === 'function') p.then(done, fail);
         } catch(e){ fail(); }
       }
@@ -699,7 +722,8 @@
          NOT stopped at the landing — its own landing attack sits
          exactly SE_ROLL_MS after the start, where the number stops,
          and the clip then ends by itself. */
-      function startSeRoll(){
+      function startSeRoll(offset){
+        offset = offset || 0;
         if (!seBuffer) return false;
         var ctx = ensureAudio();
         if (!ctx || ctx.state !== 'running') return false;
@@ -718,8 +742,12 @@
           g.gain.setValueAtTime(SE_GAIN, ctx.currentTime);
           src.connect(g); g.connect(ctx.destination);
           src.onended = function(){ if (seRollSrc === src){ seRollSrc = null; seRollGain = null; } };
-          src.start(0, SE_ROLL_START);
-          seRollSrc = src; seRollGain = g; seRollStartedAt = ctx.currentTime;
+          src.start(0, SE_ROLL_START + offset);
+          seRollSrc = src; seRollGain = g;
+          /* backdate the start by the offset so every timing check
+             (sharing window, in-stream landing) still measures from
+             the roll's true beginning */
+          seRollStartedAt = ctx.currentTime - offset;
           return true;
         } catch(e){ return false; }
       }
@@ -758,12 +786,36 @@
          pulsing over it (~62ms on / ~48ms off). One shared source
          however many players are rolling. ---- */
       var drone = null;
+      /* true while the current roll's pulse train is the synth
+         fallback: its landing must then also be the synth landing,
+         even if the sample finishes decoding mid-roll — mixing the
+         sample's landing onto a synth train was the other half of
+         the "first calculation sounds different" bug */
+      var rollOnSynth = false;
       function startDrone(){
         if (!soundOn || document.hidden || drone) return;
-        if (startSeRoll()) return;
+        if (startSeRoll()){ rollOnSynth = false; return; }
+        if (seBuffer){
+          /* sample decoded, but the playback context is still
+             resuming from the very first tap: don't drop this one
+             roll to the synth — start the recording, offset-synced
+             to the numbers, the moment the context actually runs */
+          var rctx = ensureAudio();
+          if (rctx && rctx.state !== 'running' && typeof rctx.resume === 'function'){
+            var stamp = performance.now();
+            rctx.resume().then(function(){
+              if (!seRollSrc && !drone && (rolls[0] || rolls[1]) && soundOn && !document.hidden){
+                var el = (performance.now() - stamp) / 1000;
+                if (el < (SE_LAND_START - SE_ROLL_START) - 0.05) startSeRoll(el);
+              }
+            }).catch(function(){});
+            return;
+          }
+        }
         decodeSe();
         var ctx = ensureAudio();
         if (!ctx || ctx.state !== 'running') return;
+        rollOnSynth = true;
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
         osc.type = 'sine';
@@ -849,7 +901,7 @@
            it; the segment below is played only when the roll ran on
            the synth fallback (buffer decoded too late to start it).
            The K.O. beeps keep their timing after it either way. */
-        if (seBuffer){
+        if (seBuffer && !rollOnSynth){
           var inStream = seRollSrc && (t - seRollStartedAt) < (SE_LAND_START - SE_ROLL_START) + 0.25;
           if (!inStream){
             try {
@@ -984,6 +1036,7 @@
           stopDroneIfIdle();
         }
         if (withSound && roll) playFinalSound(to <= 0);
+        if (!rolls[0] && !rolls[1]) rollOnSynth = false;
       }
       function finishAllRolls(){
         for (var p = 0; p < 2; p++){ if (rolls[p]) finishRoll(p, rolls[p].to, false); }
