@@ -266,9 +266,10 @@
          fill the tablet: the grid area still flexes, but the rows are
          capped and centred in it, so extra screen height becomes even
          breathing room around the group rather than taller buttons.
-         At phone widths a tile is ~180px wide × 100px tall — a
-         squarish block, well above the 44px tap minimum. */
-      .quick{ display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(2,100px); gap:6px; flex:1; min-height:0; align-content:center; }
+         Row height tracks the viewport width (capped at 148px) so the
+         tiles stay close to square: at phone widths a tile is ~165px
+         wide × ~130px tall, well above the 44px tap minimum. */
+      .quick{ display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(2,clamp(118px,36vw,148px)); gap:6px; flex:1; min-height:0; align-content:center; }
       /* number chips wear a Blue-Eyes silver plate face; − chips are red */
       .qbtn{
         border:1px solid #d9e9fb; background:linear-gradient(180deg,var(--silver-hi),var(--silver) 52%,var(--silver-lo)); color:#0a1c3d;
@@ -318,7 +319,7 @@
       .calc.mini{ padding:7px; margin:6px 0 0; background:rgba(7,13,32,.85); }
       .calc.mini .amtdisp{ height:48px; min-height:48px; padding-bottom:2px; }
       .calc.mini .amt{ font-size:32px; }
-      .calc.mini .quick{ grid-template-rows:repeat(2,84px); gap:5px; }
+      .calc.mini .quick{ grid-template-rows:repeat(2,clamp(96px,30vw,118px)); gap:5px; }
       .calc.mini .qbtn{ min-height:44px; font-size:24px; }
       .calc.mini .subrow .qbtn,.calc.mini .clrbtn{ height:40px; min-height:40px; }
       .calc.mini .act{ min-height:38px; font-size:15px; padding:6px 0; }
@@ -461,7 +462,7 @@
       @media (max-width:380px){
         .act.half{ min-width:72px; padding:8px 10px; }
         .qbtn{ font-size:26px; }
-        .quick{ grid-template-rows:repeat(2,92px); }
+        .quick{ grid-template-rows:repeat(2,clamp(104px,34vw,124px)); }
       }
     </style>
   </head>
