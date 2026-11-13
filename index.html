@@ -56,7 +56,17 @@
         --p2:var(--rose);
         --radius:10px;
       }
-      *{ box-sizing:border-box; }
+      *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+      /* Rapid tapping must never select text or bring up the copy /
+         magnifier callout (iOS long-press & double-tap selection):
+         the whole UI is buttons and readouts, nothing here is meant
+         to be selected. Kept off inputs below so the room-code and
+         invite-link fields still behave like normal text fields. */
+      html,body,button,.calc,.pcard,.modebar,.rpanel,.status,.hrow,.amt,.lp,.roomcode{
+        -webkit-user-select:none; user-select:none;
+        -webkit-touch-callout:none;
+      }
+      input,textarea{ -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
       html,body{ margin:0; padding:0; overscroll-behavior:none; overscroll-behavior-y:none; }
       /* the root gets the same base colour as the body so any area the
          browser paints outside the body (status-bar / safe areas in
@@ -613,6 +623,26 @@
           }
         }, { passive:false });
       })();
+      /* ---- no text selection on rapid taps ----
+         CSS user-select:none covers modern browsers, but iOS Safari /
+         webviews can still select button text on double-tap / long-press
+         in some cases. Block selection (and the long-press callout's
+         context menu) everywhere except real text fields. */
+      document.addEventListener('selectstart', function(e){
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+      });
+      document.addEventListener('dblclick', function(e){
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+      });
+      document.addEventListener('contextmenu', function(e){
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+      });
       /* battery: while the page is not visible (tab hidden, phone locked,
          app switched away) —
          1) freeze all CSS animation (see the .app-hidden rule);
