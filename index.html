@@ -147,7 +147,8 @@
          large and italic in ice white. No name bar in solo (labels are
          hidden there); remote keeps a plain name row. */
       .pcard{
-        position:relative; background:linear-gradient(165deg,#12234d 0%, #0a142e 55%, #060d22 100%);
+        position:relative; background:
+          linear-gradient(165deg,rgba(20,38,82,.88) 0%, rgba(10,20,46,.90) 55%, rgba(6,13,34,.92) 100%);
         border:1px solid var(--line);
         clip-path:polygon(18px 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%,0 18px);
         box-shadow:inset 0 0 0 1px rgba(87,200,255,.12), inset 0 1px 0 rgba(174,234,255,.18), 0 8px 26px rgba(0,0,0,.5);
@@ -233,7 +234,7 @@
 
       /* ---------- keypad block ---------- */
       /* the keypad block is an MD console panel with angled corners */
-      .calc{ background:linear-gradient(180deg, rgba(16,30,64,.92), rgba(7,13,32,.94)); border:1px solid var(--line); clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px); box-shadow:inset 0 0 0 1px rgba(87,200,255,.10), inset 0 1px 0 rgba(174,234,255,.14); padding:8px 10px 9px; margin-bottom:0; display:flex; flex-direction:column; flex:1; min-height:0; }
+      .calc{ position:relative; background:linear-gradient(180deg, rgba(16,30,64,.86), rgba(7,13,32,.90)); border:1px solid var(--line); clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px); box-shadow:inset 0 0 0 1px rgba(87,200,255,.10), inset 0 1px 0 rgba(174,234,255,.14); padding:8px 10px 9px; margin-bottom:0; display:flex; flex-direction:column; flex:1; min-height:0; }
       /* The amount being built is the readout of the keypad, so it gets
          the big type: a single centred row, nothing else competing with
          it. The correction tools (C and the − chips) live in their own
@@ -336,7 +337,7 @@
       .battlebar{ display:flex; align-items:center; gap:8px; margin-bottom:6px; flex:none; }
       .battlebar .sp{ flex:1; }
       .battlebar .barbtn{ min-height:40px; }
-      .rpanel{ background:var(--bg-panel); border:1px solid var(--line); clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); padding:12px; margin-bottom:8px; flex:none; }
+      .rpanel{ background:rgba(10,20,46,.84); border:1px solid var(--line); clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); padding:12px; margin-bottom:8px; flex:none; }
       .rpanel.collapsed .hideable{ display:none !important; }
       .rpanel.collapsed .roomcode{ font-size:20px; padding:4px 10px; }
       .rpanel.collapsed .codebox{ margin:6px 0; }
@@ -462,6 +463,60 @@
         .act.half{ min-width:72px; padding:8px 10px; }
         .qbtn{ font-size:26px; }
         .quick{ grid-template-rows:repeat(2,92px); }
+      }
+
+      /* ---------- frame glow (official-calculator mood) ----------
+         Borrowed from the official life calculator's idle screen:
+         panel frames that breathe with a soft cyan glow. Both main
+         panels glow — the LP plate above and the keypad panel below
+         it — the lower panel with its own fainter glow plus lit top
+         and bottom edge lines, kept dim and tight to the frame so
+         the light never washes over the buttons inside it.
+         Battery discipline, same as the rest of this page: the glow
+         only animates box-shadow / border-color / opacity on the
+         panels (no blur filter, no timers), everything freezes under
+         .app-hidden (backgrounded tab) via the global rule above,
+         and reduced-motion turns it all off. */
+      #app{ position:relative; z-index:1; }
+      /* frame glow: a slow breathing halo inside the panel edges. The
+         :not() guards keep the damage / heal flash animations (which
+         also animate box-shadow on the card) fully in charge while
+         they run; the glow resumes when the flash class comes off. */
+      .pcard:not(.flash-dmg):not(.flash-heal){ animation:frameglow 4.8s ease-in-out infinite alternate; }
+      .rpanel{ animation:frameglow 5.6s ease-in-out -1.1s infinite alternate; }
+      @keyframes frameglow{
+        from{ box-shadow:inset 0 0 0 1px rgba(87,200,255,.20), inset 0 0 22px rgba(56,160,255,.09), inset 0 1px 0 rgba(174,234,255,.20), 0 8px 26px rgba(0,0,0,.5), 0 0 12px rgba(56,160,255,.14); }
+        to{ box-shadow:inset 0 0 0 1px rgba(150,230,255,.50), inset 0 0 40px rgba(56,180,255,.30), inset 0 1px 0 rgba(190,240,255,.45), 0 8px 26px rgba(0,0,0,.5), 0 0 28px rgba(56,180,255,.42); }
+      }
+      /* the LP plate's top edge and inner frame line breathe with it */
+      .pcard::before{ animation:edgeglow 4.8s ease-in-out infinite alternate; }
+      @keyframes edgeglow{ from{ opacity:.75; box-shadow:0 0 8px rgba(56,207,255,.55); } to{ opacity:1; box-shadow:0 0 20px rgba(86,216,255,.95); } }
+      .pcard::after{ animation:innerglow 4.8s ease-in-out infinite alternate; }
+      @keyframes innerglow{ from{ border-color:rgba(87,200,255,.14); } to{ border-color:rgba(150,230,255,.42); } }
+      /* the lower (keypad) panel's frame glow: deliberately FAINTER
+         than the LP plate above it, and confined to the frame itself.
+         The earlier version's wide-blur inset washes (a 48px inner
+         halo plus a dedicated bottom wash) flooded the panel interior
+         and the light visibly bled over the buttons, so the interior
+         wash is gone entirely: only a thin inner ring, a shallow
+         14–20px halo that dies out before it reaches the buttons, and
+         a modest outer halo remain. */
+      .calc{ animation:calcglow 5.2s ease-in-out -1.4s infinite alternate; }
+      @keyframes calcglow{
+        from{ border-color:#2b4a7d; box-shadow:inset 0 0 0 1px rgba(110,205,255,.16), inset 0 0 14px rgba(56,160,255,.05), inset 0 1px 0 rgba(174,234,255,.12), 0 8px 26px rgba(0,0,0,.5), 0 0 7px rgba(56,160,255,.07); }
+        to{ border-color:#35619e; box-shadow:inset 0 0 0 1px rgba(150,225,255,.30), inset 0 0 20px rgba(56,180,255,.12), inset 0 1px 0 rgba(190,240,255,.26), 0 8px 26px rgba(0,0,0,.5), 0 0 13px rgba(56,180,255,.16); }
+      }
+      /* lit edge lines on the lower panel, mirroring the LP plate's
+         glowing top edge: one along the top, one along the bottom,
+         each stopping short of the angled cut corners (16px). They
+         breathe with their own dimmer calcedgeglow — the shared
+         edgeglow's bloom threw light onto the chip row above and the
+         action buttons below. */
+      .calc::before{ content:""; position:absolute; top:0; left:16px; right:0; height:2px; background:linear-gradient(90deg, var(--cyan), rgba(56,207,255,0) 65%); pointer-events:none; z-index:2; animation:calcedgeglow 5.2s ease-in-out -1.4s infinite alternate; }
+      .calc::after{ content:""; position:absolute; bottom:0; left:0; right:16px; height:2px; background:linear-gradient(90deg, rgba(56,207,255,0) 35%, var(--cyan)); pointer-events:none; z-index:2; animation:calcedgeglow 5.2s ease-in-out -1.4s infinite alternate; }
+      @keyframes calcedgeglow{ from{ opacity:.45; box-shadow:0 0 4px rgba(56,207,255,.28); } to{ opacity:.72; box-shadow:0 0 8px rgba(86,216,255,.48); } }
+      @media (prefers-reduced-motion: reduce){
+        .pcard,.calc,.rpanel,.pcard::before,.pcard::after,.calc::before,.calc::after{ animation:none !important; }
       }
     </style>
   </head>
