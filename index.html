@@ -1630,6 +1630,15 @@
       var connEpoch = 0;
       var reconnectTimer = null, reconnectTries = 0;
       var hostRestoreTimer = null, hostRestoreTries = 0;
+      var hostVerifyTimer = null;
+      /* hostRegistered: this room code has reached peer 'open' at
+         least once. An 'unavailable-id' error after that means the
+         broker still holds OUR OWN lingering registration (the
+         classic background-return case: iOS froze the socket
+         without a clean close, so the broker's expiry lags behind
+         the reconnect) — the same code must be retried until the
+         stale entry clears, never replaced with a new room. */
+      var hostRegistered = false;
       var lastHostRxAt = 0; /* guest side: last message heard from the host */
       var wakeLock = null;
       var statusText = document.getElementById('statusText');
@@ -1725,7 +1734,8 @@
         connEpoch++;
         if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
         if (hostRestoreTimer){ clearTimeout(hostRestoreTimer); hostRestoreTimer = null; }
-        reconnectTries = 0; hostRestoreTries = 0;
+        if (hostVerifyTimer){ clearTimeout(hostVerifyTimer); hostVerifyTimer = null; }
+        reconnectTries = 0; hostRestoreTries = 0; hostRegistered = false;
         releaseWakeLock();
         if (peer){ try { peer.destroy(); } catch(e){} peer = null; }
       }
@@ -1761,6 +1771,22 @@
         requestWakeLock();
         if (peer && !peer.destroyed && peer.disconnected){
           try { peer.reconnect(); } catch(e){}
+          /* a reconnect() issued the moment the page wakes can die
+             silently — the OS is still resuming the page and kills
+             the fresh socket mid-handshake without any error event.
+             Verify shortly after: if the host peer is STILL off the
+             broker, escalate to a full same-code re-registration
+             instead of sitting in the lobby forever while the guest
+             redials a room that no longer exists. */
+          if (role === 'host'){
+            if (hostVerifyTimer) clearTimeout(hostVerifyTimer);
+            hostVerifyTimer = setTimeout(function(){
+              hostVerifyTimer = null;
+              if (!wantConnection || role !== 'host') return;
+              if (peer && !peer.destroyed && peer.disconnected) scheduleHostRestore();
+              else if (peer && !peer.destroyed) broadcastState();
+            }, 4000);
+          }
         }
         if (role === 'guest'){
           if (everConnected && (!guestConn || !guestConn.open)) scheduleGuestReconnect();
@@ -1772,13 +1798,18 @@
       /* guest auto-rejoin: rebuild the peer from scratch and dial
          the same room code again. The host answers a fresh
          connection with a full snapshot, so LP and history resync
-         on their own. Retries back off (1.5s → 8s cap, 12 tries —
-         roughly two minutes with dial time) before giving up to
-         the same dead-host state a manual rejoin would start from. */
+         on their own. Retries back off (1.5s → 8s cap, 60 tries —
+         roughly ten minutes with dial time) before giving up to
+         the same dead-host state a manual rejoin would start from.
+         The long budget matters: it has to outlast the HOST being
+         switched away mid-duel (e.g. to a browser to look a card
+         up), because the host waits indefinitely on its side —
+         giving up early here is what used to strand a restored
+         host in an empty lobby with nobody left dialing. */
       function scheduleGuestReconnect(){
         if (!wantConnection || role !== 'guest' || !everConnected) return;
         if (reconnectTimer) return;
-        if (reconnectTries >= 12){
+        if (reconnectTries >= 60){
           destroyPeer();
           showRoomIdle();
           setStatus('err', 'ホスト接続切断');
@@ -1802,7 +1833,7 @@
       function scheduleHostRestore(){
         if (!wantConnection || role !== 'host') return;
         if (hostRestoreTimer) return;
-        if (hostRestoreTries >= 12){
+        if (hostRestoreTries >= 60){
           setStatus('err', '接続エラー（再登録失敗）');
           return;
         }
@@ -1868,6 +1899,7 @@
         peer.on('open', function(){
           if (epoch !== connEpoch) return;
           hostRestoreTries = 0;
+          hostRegistered = true;
           showRoomLive(true);
           if (hostConns.some(function(c){ return c.open; })) setStatus('on', '接続中');
           else setStatus('wait', 'ルーム「' + myCode + '」作成済み・参加待ち…');
@@ -1913,10 +1945,19 @@
         peer.on('error', function(err){
           if (epoch !== connEpoch) return;
           if (err && err.type === 'unavailable-id'){
-            /* during a restore the old registration may still be
-               lingering on the broker: retry the SAME code instead
-               of minting a new room nobody can find */
-            if (hostRestoreTries > 0){ scheduleHostRestore(); return; }
+            /* The broker still holds a registration under our code.
+               If this room was ever live (or a restore is already
+               running), that registration is OUR OWN stale entry —
+               most often after backgrounding, where the socket died
+               without a clean close and the foreground-return path
+               revived the peer with reconnect(), which never passes
+               through the restore counter. Retry the SAME code with
+               backoff until the stale entry expires; minting a new
+               room here was the bug that stranded the host in an
+               empty lobby while the guest kept dialing the old
+               code. Only a code that has never registered at all is
+               a genuine collision and gets replaced. */
+            if (hostRestoreTries > 0 || hostRegistered){ scheduleHostRestore(); return; }
             destroyPeer(); createRoom(); return;
           }
           if (wantConnection && err && (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed')){
