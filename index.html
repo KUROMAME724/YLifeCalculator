@@ -139,6 +139,12 @@
       .barbtn:active{ background:var(--bg-panel2); transform:translateY(1px); }
       #soundBtn[aria-pressed="false"]{ color:var(--ink-faint); }
       .barbtn svg{ width:18px; height:18px; flex:none; }
+      /* volume & reset: slightly larger tap targets than the other bar buttons */
+      #soundBtn,#resetBtn{ min-height:50px; padding:0 16px; font-size:15px; gap:7px; }
+      #soundBtn svg,#resetBtn svg{ width:22px; height:22px; }
+      @media (max-width:520px){
+        #soundBtn,#resetBtn{ padding:0 13px; }
+      }
       .barbtn.danger{ color:#ffb3bc; border-color:#5b2333; }
 
       /* ---------- player card ---------- */
@@ -402,35 +408,6 @@
       .selhint{ font-size:12px; color:var(--ink-dim); margin:0 2px 6px; flex:none; }
       .calc.disabled{ opacity:.45; pointer-events:none; }
 
-      /* ---------- history ---------- */
-      .histhead{ display:flex; align-items:center; gap:8px; margin:10px 2px 8px; }
-      .histhead h2{ font-size:16px; font-weight:900; margin:0; }
-      .histhead .count{ color:var(--ink-faint); font-size:12.5px; font-weight:700; }
-      .histhead .sp{ flex:1; }
-      .hrow{
-        display:grid; grid-template-columns:30px 1fr auto auto 40px; gap:8px; align-items:center;
-        background:var(--bg-panel); border:1px solid var(--line-soft); border-radius:10px; padding:7px 8px 7px 10px; margin-bottom:6px;
-      }
-      .hrow .no{ color:var(--ink-faint); font-size:12px; font-weight:700; text-align:center; }
-      .hrow .who{ font-weight:800; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .hrow .who i{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
-      .hrow .chg{ font-weight:800; font-size:16px; }
-      .hrow .chg.dmg{ color:#ff9aa8; } .hrow .chg.heal{ color:#7df0e4; } .hrow .chg.set{ color:var(--amber); }
-      .hrow .after{ color:var(--ink-dim); font-size:14px; white-space:nowrap; }
-      .hrow .after b{ color:#fff; font-size:16px; display:inline-block; min-width:3.1em; text-align:right; }
-      .hdel{ border:0; background:transparent; color:var(--ink-faint); border-radius:8px; min-width:40px; min-height:40px; font-size:16px; }
-      .hdel:active{ color:#ff9aa8; background:#12234d; }
-      .hempty{ color:var(--ink-faint); font-size:13.5px; text-align:center; padding:16px 0 6px; }
-      /* history is a bottom sheet in every mode, so the calculator never scrolls */
-      #historySec{
-        position:fixed; inset:auto 0 0 0; max-height:74dvh; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; z-index:40;
-        background:#060d22; border-top:1px solid var(--line-bright); border-radius:18px 18px 0 0; padding:6px 14px 26px;
-        box-shadow:0 -12px 40px rgba(0,0,0,.6), 0 -2px 18px rgba(56,160,255,.18);
-        transform:translateY(105%); transition:transform .28s ease;
-      }
-      #historySec.sheet{ transform:translateY(0); }
-      .sheetback{ position:fixed; inset:0; background:rgba(2,5,16,.6); z-index:39; }
-
       /* ---------- modal / toast ---------- */
       .modalback{ position:fixed; inset:0; background:rgba(2,5,16,.74); z-index:50; display:flex; align-items:center; justify-content:center; padding:20px; }
       .modal{ background:linear-gradient(180deg,var(--bg-panel2),var(--bg-panel)); border:1px solid var(--line-bright); clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px); padding:20px; max-width:360px; width:100%; box-shadow:0 0 30px rgba(56,160,255,.25); }
@@ -531,14 +508,6 @@
           <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
           <svg id="soundOffIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="m16 9 5 6M21 9l-5 6"/></svg>
         </button>
-        <button type="button" class="barbtn" id="undoBtn" title="ひとつ戻す">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-          <span class="barlabel">戻す</span>
-        </button>
-        <button type="button" class="barbtn" id="histBtnTop" title="計算履歴">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-          <span class="barlabel">履歴</span>
-        </button>
         <button type="button" class="barbtn danger" id="resetBtn" title="新規デュエル">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
           <span class="barlabel">新規</span>
@@ -560,7 +529,7 @@
         <div class="rpanel" id="roomPanel">
           <div id="roomIdle">
             <h2>ルーム作成・招待</h2>
-            <p>招待リンク・QRコード発行／LP・履歴の両画面同期</p>
+            <p>招待リンク・QRコード発行／LPの両画面同期</p>
             <button type="button" class="bigbtn" id="createRoomBtn">ルーム作成</button>
             <div class="divider">または</div>
             <h2>コード参加</h2>
@@ -604,17 +573,6 @@
         </div>
       </section>
 
-      <!-- ======= HISTORY ======= -->
-      <div class="sheetback" id="sheetBack" hidden></div>
-      <section id="historySec">
-        <div class="histhead">
-          <h2>計算履歴</h2>
-          <span class="count" id="histCount"></span>
-          <span class="sp"></span>
-          <button type="button" class="barbtn" id="sheetCloseBtn" hidden style="min-height:40px; padding:0 12px;">閉じる</button>
-        </div>
-        <div id="histList"></div>
-      </section>
     </div>
 
     <!-- reset modal: two choices only, no other text -->
@@ -623,6 +581,18 @@
         <div class="row">
           <button type="button" class="cancel" id="resetCancel">キャンセル</button>
           <button type="button" class="ok" id="resetOk">リセット</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- leave-room confirmation: both remote exit buttons ask first -->
+    <div class="modalback" id="leaveModal" hidden>
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3>ルーム退出</h3>
+        <p>対戦を終了してルームから退出</p>
+        <div class="row">
+          <button type="button" class="cancel" id="leaveCancel">キャンセル</button>
+          <button type="button" class="ok" id="leaveOk">退出</button>
         </div>
       </div>
     </div>
@@ -658,13 +628,13 @@
          handles Chromium; this JS guard covers iOS Safari / in-app webviews
          that ignore it: block a downward drag at a scroll container's top
          edge (and any drag on non-scrollable areas), while letting inner
-         scrollers (history sheet, remote view) scroll normally inside
+         scrollers (the remote lobby) scroll normally inside
          their bounds. */
       (function preventPullToRefresh(){
         var startY = 0;
         function scrollableOf(node){
           while (node && node !== document.body){
-            if (node.id === 'historySec' || node.id === 'remoteLobby') return node;
+            if (node.id === 'remoteLobby') return node;
             node = node.parentNode;
           }
           return null;
@@ -1362,45 +1332,6 @@
       }
       function renderAllCalcs(){ ['solo','remote'].forEach(renderCalc); }
 
-      var histSig = '';
-      function renderHistory(){
-        /* skip the full innerHTML rebuild when nothing that shows in the
-           list changed (entry ids in order + player names fully determine
-           the rows) — renders also fire on pure status changes. */
-        var sig = state.history.map(function(e){ return e.id; }).join(',') +
-                  '|' + state.players[0].name + '|' + state.players[1].name;
-        if (sig === histSig) return;
-        histSig = sig;
-        var list = document.getElementById('histList');
-        document.getElementById('histCount').textContent = state.history.length ? (state.history.length + ' 件') : '';
-        if (!state.history.length){
-          list.innerHTML = '<p class="hempty">履歴なし</p>';
-          return;
-        }
-        var cur = lps();
-        var html = '';
-        for (var i = state.history.length - 1; i >= 0; i--){
-          var e = state.history[i];
-          var diff = e.after - e.before;
-          var chg, cls;
-          if (e.kind === 'half'){ chg = '÷2 ' + (diff <= 0 ? fmt(diff) : '+'+fmt(diff)); cls = 'set'; }
-          else if (e.kind === 'set'){ chg = '→ ' + fmt(e.after); cls = 'set'; }
-          else if (diff < 0){ chg = fmt(diff); cls = 'dmg'; }
-          else { chg = '+' + fmt(diff); cls = 'heal'; }
-          var color = e.p === 0 ? 'var(--p1)' : 'var(--p2)';
-          html += '<div class="hrow">' +
-            '<span class="no num">'+(i+1)+'</span>' +
-            '<span class="who"><i style="background:'+color+'"></i>'+escapeHtml(state.players[e.p].name)+'</span>' +
-            '<span class="chg num '+cls+'">'+chg+'</span>' +
-            '<span class="after num">→ <b>'+fmt(e.after)+'</b></span>' +
-            '<button type="button" class="hdel" data-del="'+e.id+'" aria-label="この行を取り消す">✕</button>' +
-          '</div>';
-        }
-        list.innerHTML = html;
-      }
-      function escapeHtml(s){
-        return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
-      }
 
       function renderAll(flashP){
         passLps = replay();
@@ -1428,7 +1359,6 @@
         renderPlayer(0, cur[0]);
         renderPlayer(1, cur[1]);
         renderAllCalcs();
-        renderHistory();
         if (typeof flashP === 'number'){
           var delta = cur[flashP] - prevLps[flashP];
           if (delta !== 0){
@@ -1462,26 +1392,6 @@
         pushOp(op);
         afterChange(op.p);
       }
-      function doUndo(){
-        if (role === 'guest'){ sendToHost({ t:'undo' }); return; }
-        if (!state.history.length) return;
-        var last = state.history.pop();
-        afterChange(last.p);
-      }
-      /* remove one history entry locally and re-render (the host's
-         own delete path, and the host applying a guest's delete) */
-      function deleteEntryLocal(id){
-        var idx = -1;
-        state.history.forEach(function(e,i){ if (e.id === id) idx = i; });
-        if (idx < 0) return;
-        var p = state.history[idx].p;
-        state.history.splice(idx, 1);
-        afterChange(p);
-      }
-      function doDelete(id){
-        if (role === 'guest'){ sendToHost({ t:'del', id:id }); return; }
-        deleteEntryLocal(id);
-      }
       function doReset(){
         if (role === 'guest'){ sendToHost({ t:'reset' }); toast('リセット送信済み'); return; }
         state.history = [];
@@ -1489,7 +1399,7 @@
       }
       function doName(p, name){
         state.players[p].name = name;
-        if (role === 'guest'){ sendToHost({ t:'name', p:p, name:name }); renderHistory(); return; }
+        if (role === 'guest'){ sendToHost({ t:'name', p:p, name:name }); return; }
         afterChange(null);
       }
       function afterChange(flashP){
@@ -1553,20 +1463,10 @@
           }
           return;
         }
-        var del = ev.target.closest('[data-del]');
-        if (del){ doDelete(del.getAttribute('data-del')); return; }
       });
 
       /* ============ mode switching ============ */
       var views = { solo:document.getElementById('view-solo'), remote:document.getElementById('view-remote') };
-      var histSec = document.getElementById('historySec');
-      var sheetBack = document.getElementById('sheetBack');
-      var sheetCloseBtn = document.getElementById('sheetCloseBtn');
-      function setSheet(open){
-        histSec.classList.toggle('sheet', open);
-        sheetBack.hidden = !open;
-        sheetCloseBtn.hidden = !open;
-      }
       function switchMode(m){
         mode = m;
         document.body.setAttribute('data-mode', m);
@@ -1574,16 +1474,11 @@
         document.querySelectorAll('[data-mode-btn]').forEach(function(b){
           b.setAttribute('aria-pressed', b.getAttribute('data-mode-btn') === m ? 'true' : 'false');
         });
-        setSheet(false);
         renderAll();
       }
       document.querySelectorAll('[data-mode-btn]').forEach(function(b){
         b.addEventListener('click', function(){ switchMode(b.getAttribute('data-mode-btn')); });
       });
-      document.getElementById('histBtnTop').addEventListener('click', function(){ setSheet(true); });
-      sheetBack.addEventListener('click', function(){ setSheet(false); });
-      sheetCloseBtn.addEventListener('click', function(){ setSheet(false); });
-
       /* sound on/off (in-memory only; default on) */
       var soundBtn = document.getElementById('soundBtn');
       soundBtn.addEventListener('click', function(){
@@ -1595,8 +1490,7 @@
         else stopDrone();
       });
 
-      /* undo / reset */
-      document.getElementById('undoBtn').addEventListener('click', doUndo);
+      /* reset */
       var resetModal = document.getElementById('resetModal');
       document.getElementById('resetBtn').addEventListener('click', function(){ resetModal.hidden = false; });
       document.getElementById('resetCancel').addEventListener('click', function(){ resetModal.hidden = true; });
@@ -1993,8 +1887,6 @@
       function handleGuestMsg(msg){
         if (!msg) return;
         if (msg.t === 'op'){ pushOp(msg.op); afterChange(msg.op.p); }
-        else if (msg.t === 'undo'){ if (state.history.length){ var l = state.history.pop(); afterChange(l.p); } }
-        else if (msg.t === 'del'){ deleteEntryLocal(msg.id); }
         else if (msg.t === 'reset'){ state.history = []; afterChange(null); }
         else if (msg.t === 'name'){ state.players[msg.p].name = msg.name; afterChange(null); }
       }
@@ -2083,8 +1975,15 @@
         setStatus('', '未接続');
         toast('ルーム終了');
       }
-      document.getElementById('leaveRoomBtn').addEventListener('click', leaveRoom);
-      document.getElementById('battleLeaveBtn').addEventListener('click', leaveRoom);
+      /* leaving a room always asks first: one stray tap on 退出
+         mid-duel would otherwise end the room for both players */
+      var leaveModal = document.getElementById('leaveModal');
+      function askLeave(){ leaveModal.hidden = false; }
+      document.getElementById('leaveRoomBtn').addEventListener('click', askLeave);
+      document.getElementById('battleLeaveBtn').addEventListener('click', askLeave);
+      document.getElementById('leaveCancel').addEventListener('click', function(){ leaveModal.hidden = true; });
+      leaveModal.addEventListener('click', function(e){ if (e.target === leaveModal) leaveModal.hidden = true; });
+      document.getElementById('leaveOk').addEventListener('click', function(){ leaveModal.hidden = true; leaveRoom(); });
 
       /* invite re-display from the battle screen */
       var inviteModal = document.getElementById('inviteModal');
