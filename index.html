@@ -1057,6 +1057,17 @@
          high and hard precisely because it skipped the low attack
          and the dip; a slow smooth glide sounded like an FF menu.
          At 0 LP three fixed-pitch beeps step down after the ring. */
+      /* the K.O. beeps: three fixed-pitch steps down (2093 → 1568 →
+         1046), each a square + sine pair. Shared by the recording
+         path and the synth-fallback path of playFinalSound below. */
+      function playKoBeeps(ctx, t){
+        beepLayer(ctx, t + 0.36, 'square', 2093, 0, 0, 0.09, 0.04);
+        beepLayer(ctx, t + 0.36, 'sine',   2093, 0, 0, 0.09, 0.045);
+        beepLayer(ctx, t + 0.47, 'square', 1568, 0, 0, 0.09, 0.04);
+        beepLayer(ctx, t + 0.47, 'sine',   1568, 0, 0, 0.09, 0.045);
+        beepLayer(ctx, t + 0.58, 'square', 1046, 0, 0, 0.18, 0.045);
+        beepLayer(ctx, t + 0.58, 'sine',   1046, 0, 0, 0.18, 0.05);
+      }
       function playFinalSound(toZero){
         if (!soundOn || document.hidden) return;
         var ctx = ensureAudio();
@@ -1080,14 +1091,7 @@
               lsrc.start(t, SE_LAND_START, SE_LAND_DUR + 0.05);
             } catch(e){}
           }
-          if (toZero){
-            beepLayer(ctx, t + 0.36, 'square', 2093, 0, 0, 0.09, 0.04);
-            beepLayer(ctx, t + 0.36, 'sine',   2093, 0, 0, 0.09, 0.045);
-            beepLayer(ctx, t + 0.47, 'square', 1568, 0, 0, 0.09, 0.04);
-            beepLayer(ctx, t + 0.47, 'sine',   1568, 0, 0, 0.09, 0.045);
-            beepLayer(ctx, t + 0.58, 'square', 1046, 0, 0, 0.18, 0.045);
-            beepLayer(ctx, t + 0.58, 'sine',   1046, 0, 0, 0.18, 0.05);
-          }
+          if (toZero) playKoBeeps(ctx, t);
           return;
         }
         /* fallback landing (synth scoop): 1250 -> dip 917 -> fixed 2500 */
@@ -1115,14 +1119,7 @@
         gain2.gain.exponentialRampToValueAtTime(0.0001, t + 0.27);
         osc2.connect(gain2); gain2.connect(ctx.destination);
         osc2.start(t + 0.06); osc2.stop(t + 0.3);
-        if (toZero){
-          beepLayer(ctx, t + 0.36, 'square', 2093, 0, 0, 0.09, 0.04);
-          beepLayer(ctx, t + 0.36, 'sine',   2093, 0, 0, 0.09, 0.045);
-          beepLayer(ctx, t + 0.47, 'square', 1568, 0, 0, 0.09, 0.04);
-          beepLayer(ctx, t + 0.47, 'sine',   1568, 0, 0, 0.09, 0.045);
-          beepLayer(ctx, t + 0.58, 'square', 1046, 0, 0, 0.18, 0.045);
-          beepLayer(ctx, t + 0.58, 'sine',   1046, 0, 0, 0.18, 0.05);
-        }
+        if (toZero) playKoBeeps(ctx, t);
       }
       var lastPulseAt = 0;
 
@@ -1471,14 +1468,19 @@
         var last = state.history.pop();
         afterChange(last.p);
       }
-      function doDelete(id){
-        if (role === 'guest'){ sendToHost({ t:'del', id:id }); return; }
+      /* remove one history entry locally and re-render (the host's
+         own delete path, and the host applying a guest's delete) */
+      function deleteEntryLocal(id){
         var idx = -1;
         state.history.forEach(function(e,i){ if (e.id === id) idx = i; });
         if (idx < 0) return;
         var p = state.history[idx].p;
         state.history.splice(idx, 1);
         afterChange(p);
+      }
+      function doDelete(id){
+        if (role === 'guest'){ sendToHost({ t:'del', id:id }); return; }
+        deleteEntryLocal(id);
       }
       function doReset(){
         if (role === 'guest'){ sendToHost({ t:'reset' }); toast('リセット送信済み'); return; }
@@ -1703,6 +1705,34 @@
         if (!base) return null;
         return base + '?join=' + encodeURIComponent(code);
       }
+      /* paint one invite surface (the lobby panel, or the battle
+         screen's invite modal): room code, link field and QR for
+         the current room. In a non-http(s) context (e.g. Muse
+         in-app / sandbox where location.href is about:blank or a
+         custom scheme) there is no shareable URL, so the link row
+         and QR are hidden and the room code alone is the invite —
+         never show a broken link or QR. On the user's own https
+         hosting a link exists and both appear. Returns hasLink. */
+      function paintInvite(codeEl, linkInput, qrBox, linkRow, qrWrap){
+        if (codeEl) codeEl.textContent = myCode || '------';
+        var url = inviteURL(myCode);
+        var hasLink = !!url;
+        if (hasLink){
+          if (linkRow) linkRow.style.display = '';
+          if (qrWrap) qrWrap.style.display = '';
+          linkInput.value = url;
+          qrBox.innerHTML = '';
+          if (typeof window.QRCode !== 'undefined'){
+            try { new window.QRCode(qrBox, { text:url, width:132, height:132, colorDark:'#1a1206', colorLight:'#ffffff' }); } catch(e){}
+          }
+        } else {
+          if (linkRow) linkRow.style.display = 'none';
+          if (qrWrap) qrWrap.style.display = 'none';
+          linkInput.value = '';
+          qrBox.innerHTML = '';
+        }
+        return hasLink;
+      }
       function snapshot(){
         return { players: state.players, history: state.history.map(function(e){
           return { id:e.id, p:e.p, kind:e.kind, amt:e.amt };
@@ -1746,6 +1776,20 @@
         hostConns = []; guestConn = null;
         connEpoch++;
         if (peer){ try { peer.destroy(); } catch(e){} peer = null; }
+      }
+      /* an ICE failure can leave a data connection half-open with
+         no 'close' event: force it closed so the wait / rejoin
+         logic actually runs. Guards both host and guest conns. */
+      function guardIce(conn){
+        try {
+          if (conn.peerConnection){
+            conn.peerConnection.addEventListener('iceconnectionstatechange', function(){
+              if (conn.peerConnection.iceConnectionState === 'failed'){
+                try { conn.close(); } catch(e){}
+              }
+            });
+          }
+        } catch(e){}
       }
       /* keep the screen awake while a duel is live: a phone that
          sleeps mid-duel suspends the page and the connection with
@@ -1854,38 +1898,17 @@
         document.getElementById('roomPanel').classList.add('collapsed');
         var toggleBtn = document.getElementById('roomToggleBtn');
         toggleBtn.textContent = '招待リンク・QRを表示';
-        document.getElementById('roomCodeView').textContent = myCode || '------';
-        var url = inviteURL(myCode);
-        var hasLink = !!url;
+        var hasLink = paintInvite(
+          document.getElementById('roomCodeView'),
+          document.getElementById('inviteLinkInput'),
+          document.getElementById('qrBox'),
+          document.querySelector('#roomLive .linkrow'),
+          document.querySelector('#roomLive .qrwrap'));
         document.getElementById('roomLiveTitle').textContent = isHost ? (hasLink ? '招待リンク' : 'ルームコード') : 'ルーム参加中';
         document.getElementById('roomLiveDesc').textContent = isHost
           ? (hasLink ? '相手への送付用リンク' : 'ルームコード共有')
           : 'ホストルーム接続中';
-        var linkInput = document.getElementById('inviteLinkInput');
-        var qrBox = document.getElementById('qrBox');
-        var linkRow = document.querySelector('#roomLive .linkrow');
-        var qrWrap = document.querySelector('#roomLive .qrwrap');
-        if (hasLink){
-          if (toggleBtn) toggleBtn.style.display = '';
-          if (linkRow) linkRow.style.display = '';
-          if (qrWrap) qrWrap.style.display = '';
-          linkInput.value = url;
-          qrBox.innerHTML = '';
-          if (typeof window.QRCode !== 'undefined'){
-            try { new window.QRCode(qrBox, { text:url, width:132, height:132, colorDark:'#1a1206', colorLight:'#ffffff' }); } catch(e){}
-          }
-        } else {
-          /* Non-http(s) context (e.g. Muse in-app / sandbox where
-             location.href is about:blank or a custom scheme): there is
-             no shareable URL, so never show a broken link or QR —
-             the room code alone is the invite. On the user's own
-             https hosting, hasLink is true and link + QR appear. */
-          if (toggleBtn) toggleBtn.style.display = 'none';
-          if (linkRow) linkRow.style.display = 'none';
-          if (qrWrap) qrWrap.style.display = 'none';
-          linkInput.value = '';
-          qrBox.innerHTML = '';
-        }
+        if (toggleBtn) toggleBtn.style.display = hasLink ? '' : 'none';
       }
       function showRoomIdle(){
         document.getElementById('roomIdle').hidden = false;
@@ -1929,18 +1952,7 @@
                a wait state, not the end of the room */
             else setStatus('wait', everConnected ? '相手切断・再接続待ち…' : '相手退出・参加待ち…');
           });
-          /* an ICE failure can leave the data connection half-open
-             with no 'close' event: force it closed so the wait /
-             rejoin logic above actually runs */
-          try {
-            if (conn.peerConnection){
-              conn.peerConnection.addEventListener('iceconnectionstatechange', function(){
-                if (conn.peerConnection.iceConnectionState === 'failed'){
-                  try { conn.close(); } catch(e){}
-                }
-              });
-            }
-          } catch(e){}
+          guardIce(conn);
         });
         peer.on('error', function(err){
           if (epoch !== connEpoch) return;
@@ -1982,19 +1994,10 @@
         if (!msg) return;
         if (msg.t === 'op'){ pushOp(msg.op); afterChange(msg.op.p); }
         else if (msg.t === 'undo'){ if (state.history.length){ var l = state.history.pop(); afterChange(l.p); } }
-        else if (msg.t === 'del'){ doDeleteHost(msg.id); }
+        else if (msg.t === 'del'){ deleteEntryLocal(msg.id); }
         else if (msg.t === 'reset'){ state.history = []; afterChange(null); }
         else if (msg.t === 'name'){ state.players[msg.p].name = msg.name; afterChange(null); }
       }
-      function doDeleteHost(id){
-        var idx = -1;
-        state.history.forEach(function(e,i){ if (e.id === id) idx = i; });
-        if (idx < 0) return;
-        var p = state.history[idx].p;
-        state.history.splice(idx, 1);
-        afterChange(p);
-      }
-
       function setupGuestPeer(){
         var epoch = connEpoch;
         peer = new window.Peer();
@@ -2033,18 +2036,7 @@
             if (epoch !== connEpoch) return;
             scheduleGuestReconnect();
           });
-          /* same half-open guard as the host side: an ICE failure
-             with no 'close' event is forced closed so the rejoin
-             logic runs */
-          try {
-            if (conn.peerConnection){
-              conn.peerConnection.addEventListener('iceconnectionstatechange', function(){
-                if (conn.peerConnection.iceConnectionState === 'failed'){
-                  try { conn.close(); } catch(e){}
-                }
-              });
-            }
-          } catch(e){}
+          guardIce(conn);
         });
         peer.on('error', function(err){
           if (epoch !== connEpoch) return;
@@ -2097,48 +2089,30 @@
       /* invite re-display from the battle screen */
       var inviteModal = document.getElementById('inviteModal');
       document.getElementById('inviteBtn').addEventListener('click', function(){
-        document.getElementById('inviteCodeView').textContent = myCode || '------';
-        var url = inviteURL(myCode);
-        var hasLink = !!url;
-        var inp2 = document.getElementById('inviteLinkInput2');
-        var qb = document.getElementById('qrBox2');
-        var mLinkRow = document.querySelector('#inviteModal .linkrow');
-        var mQrWrap = document.querySelector('#inviteModal .qrwrap');
-        if (hasLink){
-          if (mLinkRow) mLinkRow.style.display = '';
-          if (mQrWrap) mQrWrap.style.display = '';
-          inp2.value = url;
-          qb.innerHTML = '';
-          if (typeof window.QRCode !== 'undefined'){
-            try { new window.QRCode(qb, { text:url, width:132, height:132, colorDark:'#1a1206', colorLight:'#ffffff' }); } catch(e){}
-          }
-        } else {
-          if (mLinkRow) mLinkRow.style.display = 'none';
-          if (mQrWrap) mQrWrap.style.display = 'none';
-          inp2.value = '';
-          qb.innerHTML = '';
-        }
+        paintInvite(
+          document.getElementById('inviteCodeView'),
+          document.getElementById('inviteLinkInput2'),
+          document.getElementById('qrBox2'),
+          document.querySelector('#inviteModal .linkrow'),
+          document.querySelector('#inviteModal .qrwrap'));
         inviteModal.hidden = false;
       });
       document.getElementById('inviteCloseBtn').addEventListener('click', function(){ inviteModal.hidden = true; });
       inviteModal.addEventListener('click', function(e){ if (e.target === inviteModal) inviteModal.hidden = true; });
-      document.getElementById('copyLinkBtn2').addEventListener('click', function(){
-        var inp = document.getElementById('inviteLinkInput2');
-        var url = inp.value;
+      /* copy an invite link field's contents: Clipboard API first,
+         execCommand fallback for older browsers / webviews */
+      function copyLink(inp){
         function done(){ toast('リンクコピー済み'); }
-        if (navigator.clipboard && navigator.clipboard.writeText){
-          navigator.clipboard.writeText(url).then(done, function(){ fallback(); });
-        } else fallback();
         function fallback(){ inp.focus(); inp.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('コピー失敗・長押しコピー'); } }
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(inp.value).then(done, function(){ fallback(); });
+        } else fallback();
+      }
+      document.getElementById('copyLinkBtn2').addEventListener('click', function(){
+        copyLink(document.getElementById('inviteLinkInput2'));
       });
       document.getElementById('copyLinkBtn').addEventListener('click', function(){
-        var inp = document.getElementById('inviteLinkInput');
-        var url = inp.value;
-        function done(){ toast('リンクコピー済み'); }
-        if (navigator.clipboard && navigator.clipboard.writeText){
-          navigator.clipboard.writeText(url).then(done, function(){ fallback(); });
-        } else fallback();
-        function fallback(){ inp.focus(); inp.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('コピー失敗・長押しコピー'); } }
+        copyLink(document.getElementById('inviteLinkInput'));
       });
 
       /* ---- heartbeat / half-open detection ----
