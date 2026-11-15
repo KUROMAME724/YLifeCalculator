@@ -307,7 +307,6 @@
       .act.half{ background:#0a1734; border:1px solid var(--line-bright); color:var(--cyan-hi); font-family:"Rajdhani",sans-serif; font-size:21px; padding:8px 16px; min-width:84px; text-shadow:0 0 8px rgba(56,207,255,.5); }
       /* symbol-only actions: the glyph + color carry the meaning, no word labels */
       .act.dmg,.act.heal{ font-size:30px; line-height:1; padding:5px 0; }
-      .calc.mini .act.dmg,.calc.mini .act.heal{ font-size:26px; }
       .act:disabled{ opacity:.38; box-shadow:none; }
       /* dimmed-but-tappable state for the − / ＋ actions when no amount is
          entered yet: a real disabled button swallows the tap silently,
@@ -320,18 +319,6 @@
       .calc.hint .amtdisp{ animation:shake .32s ease-in-out; }
       .amt.bump{ animation:amtbump .28s ease; }
       @keyframes amtbump{ 0%{ transform:scale(1);} 35%{ transform:scale(1.18);} 100%{ transform:scale(1);} }
-
-      /* compact variant (legacy hooks kept minimal) */
-      .calc.mini{ padding:7px; margin:6px 0 0; background:rgba(7,13,32,.85); }
-      .calc.mini .amtdisp{ height:48px; min-height:48px; padding-bottom:2px; }
-      .calc.mini .amt{ font-size:32px; }
-      .calc.mini .quick{ grid-template-rows:repeat(2,84px); gap:5px; }
-      .calc.mini .qbtn{ min-height:44px; font-size:24px; }
-      .calc.mini .subrow .qbtn,.calc.mini .clrbtn{ height:40px; min-height:40px; }
-      .calc.mini .act{ min-height:38px; font-size:15px; padding:6px 0; }
-      .calc.mini .act.half{ font-size:16px; padding:6px 10px; min-width:64px; }
-      .calc.mini .quick,.calc.mini .acts{ gap:5px; }
-      .calc.mini .acts{ margin-top:5px; }
 
       /* ---------- remote ---------- */
       /* two stages: lobby (room create / join only, no calculator) and
@@ -405,7 +392,6 @@
       .joinrow button{ border:1px solid var(--line-bright); background:#12234d; color:var(--cyan); border-radius:10px; font-weight:900; padding:0 20px; min-height:52px; }
       .divider{ display:flex; align-items:center; gap:10px; color:var(--ink-faint); font-size:12px; font-weight:700; margin:16px 0 12px; }
       .divider::before,.divider::after{ content:""; flex:1; height:1px; background:var(--line-soft); }
-      .selhint{ font-size:12px; color:var(--ink-dim); margin:0 2px 6px; flex:none; }
       .calc.disabled{ opacity:.45; pointer-events:none; }
 
       /* ---------- modal / toast ---------- */
@@ -1384,7 +1370,6 @@
         document.querySelectorAll('[data-namelabel="'+p+'"]').forEach(function(lbl){
           if (lbl.textContent !== state.players[p].name) lbl.textContent = state.players[p].name;
         });
-        document.querySelectorAll('[data-rotlp="'+p+'"]').forEach(function(s){ s.textContent = fmt(cur); });
       }
 
       /* remote: you operate only your own LP; the opponent is an LP-only strip.
@@ -1556,11 +1541,6 @@
       function doReset(){
         if (role === 'guest'){ sendToHost({ t:'reset' }); toast('リセット送信済み'); return; }
         state.history = [];
-        afterChange(null);
-      }
-      function doName(p, name){
-        state.players[p].name = name;
-        if (role === 'guest'){ sendToHost({ t:'name', p:p, name:name }); return; }
         afterChange(null);
       }
       function afterChange(flashP){
