@@ -712,18 +712,23 @@
          app switched away) —
          1) freeze all CSS animation (see the .app-hidden rule);
          2) drop the pending toast timer;
-         3) suspend the PeerJS signaling socket, whose keepalive pings are
-            the only background network traffic this app has. disconnect()
-            closes just the broker socket: a live data connection (an
-            ongoing duel) stays up, and reconnect() on return restores
-            the ability to accept new joins. bgSuspended keeps the peer's
-            own 'disconnected' handler from instantly undoing this. */
-      var bgSuspended = false;
+         3) the PeerJS signaling socket is deliberately NOT suspended
+            here. An earlier version called peer.disconnect() on
+            backgrounding to save its keepalive pings, and that was
+            itself a cause of lost rooms: while the host was switched
+            away (e.g. to a browser mid-duel to look a card up), it
+            vanished from the broker, so the opponent could not join
+            or rejoin, and on some phones the socket never came back
+            at all. The signaling keepalive is a tiny ping — keeping
+            it costs almost nothing next to a dropped duel.
+         On return, recoverConnection() (in the remote section)
+         inspects the peer and the data connection and revives or
+         automatically rejoins whatever the OS throttled or killed
+         while the page was away. */
       if (document.hidden) document.documentElement.classList.add('app-hidden');
       document.addEventListener('visibilitychange', function(){
         var hidden = document.hidden;
         document.documentElement.classList.toggle('app-hidden', hidden);
-        bgSuspended = hidden;
         if (hidden){
           /* a roll in flight lands instantly instead of running unseen */
           if (typeof finishAllRolls === 'function') finishAllRolls();
@@ -731,13 +736,8 @@
             clearTimeout(toastTimer); toastTimer = null;
             document.getElementById('toast').classList.remove('show');
           }
-          if (typeof peer !== 'undefined' && peer && !peer.destroyed && !peer.disconnected){
-            try { peer.disconnect(); } catch(e){}
-          }
         } else {
-          if (typeof peer !== 'undefined' && peer && !peer.destroyed && peer.disconnected){
-            try { peer.reconnect(); } catch(e){}
-          }
+          if (typeof recoverConnection === 'function') recoverConnection();
         }
       });
       var START_LP = 8000;
@@ -1616,15 +1616,34 @@
       var peer = null, role = null, netConnected = false;
       var nextSnapInstant = true;
       var hostConns = [], guestConn = null, myCode = null;
+      /* ---- background / drop recovery state ----
+         wantConnection is true from room create / join until the user
+         explicitly leaves: it is what separates "connection dropped,
+         bring it back on its own" from "user ended the room".
+         everConnected gates auto-rejoin to rooms that actually
+         connected once, so a wrong-code join error stays an error.
+         connEpoch is bumped on every teardown so close / error events
+         arriving late from a destroyed peer object are ignored
+         instead of clobbering the state of its replacement. */
+      var wantConnection = false;
+      var everConnected = false;
+      var connEpoch = 0;
+      var reconnectTimer = null, reconnectTries = 0;
+      var hostRestoreTimer = null, hostRestoreTries = 0;
+      var lastHostRxAt = 0; /* guest side: last message heard from the host */
+      var wakeLock = null;
       var statusText = document.getElementById('statusText');
       var sdot = document.getElementById('sdot');
 
       /* ---- remote stage: lobby <-> battle ----
          Connected ('on') switches to the battle screen immediately.
-         Losing the connection while in battle waits out a short grace
-         window first, so a brief network hiccup doesn't flap the screen;
-         LP and history are untouched either way, so rejoining the same
-         room lands back on the battle screen with state intact. */
+         Losing the connection while in battle waits out a grace
+         window first, so a brief network hiccup doesn't flap the
+         screen — and while an automatic reconnect is still pending
+         (wantConnection) the window stretches to 30s, which covers
+         the usual "switched to another app for a bit" return. LP and
+         history are untouched either way, so rejoining the same room
+         lands back on the battle screen with state intact. */
       var remoteStage = 'lobby';
       var battleExitTimer = null;
       function setRemoteStage(stage){
@@ -1642,13 +1661,14 @@
           battleExitTimer = setTimeout(function(){
             battleExitTimer = null;
             setRemoteStage('lobby');
-          }, 1600);
+          }, wantConnection ? 30000 : 1600);
         }
       }
       function setStatus(kind, msg){
         statusText.textContent = msg;
         sdot.className = 'sdot' + (kind ? ' ' + kind : '');
         netConnected = (kind === 'on');
+        if (kind === 'on') requestWakeLock();
         syncRemoteStage(kind);
         renderAll();
       }
@@ -1701,7 +1721,100 @@
       function destroyPeer(){
         hostConns = []; guestConn = null; role = null; myCode = null;
         nextSnapInstant = true;
+        wantConnection = false; everConnected = false;
+        connEpoch++;
+        if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
+        if (hostRestoreTimer){ clearTimeout(hostRestoreTimer); hostRestoreTimer = null; }
+        reconnectTries = 0; hostRestoreTries = 0;
+        releaseWakeLock();
         if (peer){ try { peer.destroy(); } catch(e){} peer = null; }
+      }
+      /* drop only the Peer object (dead socket, half-open connection)
+         while keeping role + room code, so the auto-rejoin below can
+         rebuild it and land back in the same room */
+      function teardownPeerObject(){
+        hostConns = []; guestConn = null;
+        connEpoch++;
+        if (peer){ try { peer.destroy(); } catch(e){} peer = null; }
+      }
+      /* keep the screen awake while a duel is live: a phone that
+         sleeps mid-duel suspends the page and the connection with
+         it. The lock releases itself when the page hides, and
+         setStatus('on') / recoverConnection() re-request it. */
+      function requestWakeLock(){
+        if (!('wakeLock' in navigator)) return;
+        try {
+          navigator.wakeLock.request('screen').then(function(wl){ wakeLock = wl; }, function(){});
+        } catch(e){}
+      }
+      function releaseWakeLock(){
+        if (wakeLock){ try { wakeLock.release(); } catch(e){} wakeLock = null; }
+      }
+      /* foreground return (also the answer to OS-level throttling
+         while backgrounded): revive the signaling socket if the
+         browser dropped it, rejoin as guest if the data connection
+         is gone, re-register as host if the peer object died, and
+         push a fresh snapshot to anyone still attached so both
+         screens agree again. */
+      function recoverConnection(){
+        if (!wantConnection || !role) return;
+        requestWakeLock();
+        if (peer && !peer.destroyed && peer.disconnected){
+          try { peer.reconnect(); } catch(e){}
+        }
+        if (role === 'guest'){
+          if (everConnected && (!guestConn || !guestConn.open)) scheduleGuestReconnect();
+        } else if (role === 'host'){
+          if (!peer || peer.destroyed) scheduleHostRestore();
+          else broadcastState();
+        }
+      }
+      /* guest auto-rejoin: rebuild the peer from scratch and dial
+         the same room code again. The host answers a fresh
+         connection with a full snapshot, so LP and history resync
+         on their own. Retries back off (1.5s → 8s cap, 12 tries —
+         roughly two minutes with dial time) before giving up to
+         the same dead-host state a manual rejoin would start from. */
+      function scheduleGuestReconnect(){
+        if (!wantConnection || role !== 'guest' || !everConnected) return;
+        if (reconnectTimer) return;
+        if (reconnectTries >= 12){
+          destroyPeer();
+          showRoomIdle();
+          setStatus('err', 'ホスト接続切断');
+          return;
+        }
+        reconnectTries++;
+        setStatus('wait', '再接続中…');
+        var delay = Math.min(1500 * reconnectTries, 8000);
+        reconnectTimer = setTimeout(function(){
+          reconnectTimer = null;
+          if (!wantConnection || role !== 'guest') return;
+          nextSnapInstant = true;
+          teardownPeerObject();
+          setupGuestPeer();
+        }, delay);
+      }
+      /* host auto-restore: re-register the SAME room code with the
+         broker, so a guest that comes back (or was mid-rejoin while
+         the host was away) finds the room again. Same backoff and
+         cap as the guest path. */
+      function scheduleHostRestore(){
+        if (!wantConnection || role !== 'host') return;
+        if (hostRestoreTimer) return;
+        if (hostRestoreTries >= 12){
+          setStatus('err', '接続エラー（再登録失敗）');
+          return;
+        }
+        hostRestoreTries++;
+        setStatus('wait', '再接続中…');
+        var delay = Math.min(1500 * hostRestoreTries, 8000);
+        hostRestoreTimer = setTimeout(function(){
+          hostRestoreTimer = null;
+          if (!wantConnection || role !== 'host') return;
+          teardownPeerObject();
+          setupHostPeer();
+        }, delay);
       }
       function showRoomLive(isHost){
         document.getElementById('roomIdle').hidden = true;
@@ -1749,35 +1862,79 @@
         document.getElementById('roomPanel').classList.remove('collapsed');
       }
 
+      function setupHostPeer(){
+        var epoch = connEpoch;
+        peer = new window.Peer(PREFIX + myCode);
+        peer.on('open', function(){
+          if (epoch !== connEpoch) return;
+          hostRestoreTries = 0;
+          showRoomLive(true);
+          if (hostConns.some(function(c){ return c.open; })) setStatus('on', '接続中');
+          else setStatus('wait', 'ルーム「' + myCode + '」作成済み・参加待ち…');
+        });
+        peer.on('connection', function(conn){
+          if (epoch !== connEpoch) return;
+          hostConns.push(conn);
+          conn.on('open', function(){
+            if (epoch !== connEpoch) return;
+            everConnected = true;
+            try { conn.send({ t:'state', s: snapshot() }); } catch(e){}
+            setStatus('on', '接続中： 参加（' + hostConns.filter(function(c){return c.open;}).length + '台）');
+          });
+          conn.on('data', function(msg){
+            if (epoch !== connEpoch) return;
+            /* heartbeat answer: not a game op, never reaches state */
+            if (msg && msg.t === 'ping'){ try { conn.send({ t:'pong' }); } catch(e){} return; }
+            if (msg && msg.t === 'pong') return;
+            handleGuestMsg(msg);
+          });
+          conn.on('close', function(){
+            if (epoch !== connEpoch) return;
+            hostConns = hostConns.filter(function(c){ return c !== conn; });
+            if (hostConns.some(function(c){ return c.open; })) setStatus('on', '接続中');
+            /* the room stays registered either way: a guest whose
+               drop was an app switch rejoins on its own, so this is
+               a wait state, not the end of the room */
+            else setStatus('wait', everConnected ? '相手切断・再接続待ち…' : '相手退出・参加待ち…');
+          });
+          /* an ICE failure can leave the data connection half-open
+             with no 'close' event: force it closed so the wait /
+             rejoin logic above actually runs */
+          try {
+            if (conn.peerConnection){
+              conn.peerConnection.addEventListener('iceconnectionstatechange', function(){
+                if (conn.peerConnection.iceConnectionState === 'failed'){
+                  try { conn.close(); } catch(e){}
+                }
+              });
+            }
+          } catch(e){}
+        });
+        peer.on('error', function(err){
+          if (epoch !== connEpoch) return;
+          if (err && err.type === 'unavailable-id'){
+            /* during a restore the old registration may still be
+               lingering on the broker: retry the SAME code instead
+               of minting a new room nobody can find */
+            if (hostRestoreTries > 0){ scheduleHostRestore(); return; }
+            destroyPeer(); createRoom(); return;
+          }
+          if (wantConnection && err && (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed')){
+            scheduleHostRestore(); return;
+          }
+          setStatus('err', '接続エラー（' + (err && err.type ? err.type : 'unknown') + '）');
+        });
+        peer.on('disconnected', function(){ try { peer.reconnect(); } catch(e){} });
+      }
+
       function createRoom(){
         if (!peerLibOk()){ setStatus('err', '接続ライブラリ読込失敗・再読込推奨'); return; }
         destroyPeer();
         myCode = genCode();
         role = 'host';
+        wantConnection = true;
         setStatus('wait', 'ルーム作成中…');
-        peer = new window.Peer(PREFIX + myCode);
-        peer.on('open', function(){
-          showRoomLive(true);
-          setStatus('wait', 'ルーム「' + myCode + '」作成済み・参加待ち…');
-        });
-        peer.on('connection', function(conn){
-          hostConns.push(conn);
-          conn.on('open', function(){
-            try { conn.send({ t:'state', s: snapshot() }); } catch(e){}
-            setStatus('on', '接続中： 参加（' + hostConns.filter(function(c){return c.open;}).length + '台）');
-          });
-          conn.on('data', function(msg){ handleGuestMsg(msg); });
-          conn.on('close', function(){
-            hostConns = hostConns.filter(function(c){ return c !== conn; });
-            if (hostConns.some(function(c){ return c.open; })) setStatus('on', '接続中');
-            else setStatus('wait', '相手退出・参加待ち…');
-          });
-        });
-        peer.on('error', function(err){
-          if (err && err.type === 'unavailable-id'){ destroyPeer(); createRoom(); return; }
-          setStatus('err', '接続エラー（' + (err && err.type ? err.type : 'unknown') + '）');
-        });
-        peer.on('disconnected', function(){ if (!bgSuspended){ try { peer.reconnect(); } catch(e){} } });
+        setupHostPeer();
       }
 
       function handleGuestMsg(msg){
@@ -1797,6 +1954,73 @@
         afterChange(p);
       }
 
+      function setupGuestPeer(){
+        var epoch = connEpoch;
+        peer = new window.Peer();
+        peer.on('open', function(){
+          if (epoch !== connEpoch) return;
+          var conn = peer.connect(PREFIX + myCode, { reliable:true });
+          guestConn = conn;
+          conn.on('open', function(){
+            if (epoch !== connEpoch) return;
+            reconnectTries = 0;
+            everConnected = true;
+            lastHostRxAt = Date.now();
+            showRoomLive(false);
+            setStatus('on', '接続中： ルーム「' + myCode + '」参加中');
+          });
+          conn.on('data', function(msg){
+            if (epoch !== connEpoch) return;
+            lastHostRxAt = Date.now();
+            if (!msg) return;
+            if (msg.t === 'state') applySnapshot(msg.s);
+            else if (msg.t === 'ping'){ try { conn.send({ t:'pong' }); } catch(e){} }
+          });
+          conn.on('close', function(){
+            if (epoch !== connEpoch) return;
+            if (guestConn === conn) guestConn = null;
+            /* a drop after a live duel (app switch, network change,
+               host phone asleep) is retried automatically against
+               the same room; only a room that never connected keeps
+               the original dead-end behaviour */
+            if (wantConnection && everConnected){ scheduleGuestReconnect(); return; }
+            destroyPeer();
+            showRoomIdle();
+            setStatus('err', 'ホスト接続切断');
+          });
+          conn.on('error', function(){
+            if (epoch !== connEpoch) return;
+            scheduleGuestReconnect();
+          });
+          /* same half-open guard as the host side: an ICE failure
+             with no 'close' event is forced closed so the rejoin
+             logic runs */
+          try {
+            if (conn.peerConnection){
+              conn.peerConnection.addEventListener('iceconnectionstatechange', function(){
+                if (conn.peerConnection.iceConnectionState === 'failed'){
+                  try { conn.close(); } catch(e){}
+                }
+              });
+            }
+          } catch(e){}
+        });
+        peer.on('error', function(err){
+          if (epoch !== connEpoch) return;
+          if (err && err.type === 'peer-unavailable'){
+            /* mid-rejoin the host may still be re-registering
+               itself: that is a retry, not a wrong code */
+            if (wantConnection && everConnected){ scheduleGuestReconnect(); return; }
+            setStatus('err', 'ルーム未検出・コード要確認');
+          } else if (wantConnection && everConnected){
+            scheduleGuestReconnect();
+          } else {
+            setStatus('err', '接続エラー（' + (err && err.type ? err.type : 'unknown') + '）');
+          }
+        });
+        peer.on('disconnected', function(){ try { peer.reconnect(); } catch(e){} });
+      }
+
       function joinRoom(code){
         code = (code || '').trim().toUpperCase();
         if (!/^[A-Z0-9]{6}$/.test(code)){ toast('6文字コード必須'); return; }
@@ -1804,30 +2028,9 @@
         destroyPeer();
         myCode = code;
         role = 'guest';
+        wantConnection = true;
         setStatus('wait', 'ルーム「' + code + '」接続中…');
-        peer = new window.Peer();
-        peer.on('open', function(){
-          guestConn = peer.connect(PREFIX + code, { reliable:true });
-          guestConn.on('open', function(){
-            showRoomLive(false);
-            setStatus('on', '接続中： ルーム「' + code + '」参加中');
-          });
-          guestConn.on('data', function(msg){
-            if (msg && msg.t === 'state') applySnapshot(msg.s);
-          });
-          guestConn.on('close', function(){
-            destroyPeer();
-            showRoomIdle();
-            setStatus('err', 'ホスト接続切断');
-          });
-        });
-        peer.on('error', function(err){
-          if (err && err.type === 'peer-unavailable'){
-            setStatus('err', 'ルーム未検出・コード要確認');
-          } else {
-            setStatus('err', '接続エラー（' + (err && err.type ? err.type : 'unknown') + '）');
-          }
-        });
+        setupGuestPeer();
       }
 
       document.getElementById('roomToggleBtn').addEventListener('click', function(){
@@ -1896,6 +2099,36 @@
         } else fallback();
         function fallback(){ inp.focus(); inp.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('コピー失敗・長押しコピー'); } }
       });
+
+      /* ---- heartbeat / half-open detection ----
+         A backgrounded or network-switched phone can leave a data
+         connection half-open: open on paper, dead in practice, and
+         no 'close' event ever fires. While the page is in the
+         foreground both sides ping every 20s; the guest also tracks
+         when it last heard anything from the host, and 70s of
+         silence forces the connection closed so the auto-rejoin
+         above takes over. The host only answers pings and watches
+         its own broker registration — rejoining is guest-driven,
+         and the room code stays registered for it. One interval,
+         acting only while a room is live: negligible battery. */
+      setInterval(function(){
+        if (!wantConnection || document.hidden) return;
+        if (role === 'guest'){
+          if (guestConn && guestConn.open){
+            try { guestConn.send({ t:'ping' }); } catch(e){}
+            if (lastHostRxAt && Date.now() - lastHostRxAt > 70000){
+              lastHostRxAt = Date.now();
+              try { guestConn.close(); } catch(e){}
+            }
+          } else if (everConnected){
+            scheduleGuestReconnect();
+          }
+        } else if (role === 'host'){
+          hostConns.forEach(function(c){ try { if (c.open) c.send({ t:'ping' }); } catch(e){} });
+          if (!peer || peer.destroyed) scheduleHostRestore();
+          else if (peer.disconnected){ try { peer.reconnect(); } catch(e){} }
+        }
+      }, 20000);
 
       /* auto-join from ?join=CODE */
       var joinParam = null;
