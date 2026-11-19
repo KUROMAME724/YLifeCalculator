@@ -95,7 +95,14 @@
         color:var(--ink);
         font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
         -webkit-font-smoothing:antialiased;
-        height:100dvh;
+        /* the body IS the viewport: pinned to all four screen edges,
+           so its box is the visible screen by construction, on every
+           device, with no height ever measured or assumed (the page
+           never scrolls; overflow stays hidden). Anything stretched
+           to inset:0 inside it — the pinch frame — shares this exact
+           box, so it cannot detach from the screen edges whatever
+           the handset or the launch timing. */
+        position:fixed; inset:0;
         overflow:hidden;
         overscroll-behavior:none;
         touch-action:manipulation;
@@ -513,9 +520,25 @@
          corners clip it into that device's true curve, the same
          way the OS edge light itself follows the glass. In a
          browser tab the viewport corners are square and the line
-         simply runs along the window edge. */
+         simply runs along the window edge.
+         Sizing note: NO geometry is measured anywhere — no pixel
+         heights, no viewport units, no JS sync pass. The overlay is
+         an ordinary child of the body stretched to inset:0, and the
+         body itself is position:fixed at inset:0, so frame,
+         background and content all share one and the same box: the
+         visible screen, whatever size the device happens to be.
+         Earlier builds sized this frame from a measured height —
+         first 100dvh, then a visualViewport pixel height re-asserted
+         by JS on show / foreground / resize — and on iOS that
+         measurement could be the transient launch height, leaving
+         the bottom line floating above the real screen bottom until
+         some unrelated relayout snapped it back (timing-dependent,
+         exactly as reported). Sharing the body's box removes the
+         whole class of failure: there is nothing to measure, so
+         there is nothing that can be stale — on any handset, at
+         any timing. */
       #pinchVignette{
-        position:fixed; inset:0; z-index:40; pointer-events:none; opacity:0;
+        position:absolute; inset:0; z-index:40; pointer-events:none; opacity:0;
         box-shadow:inset 0 0 16px rgba(255,45,75,.34), inset 0 0 58px rgba(215,10,45,.18), inset 0 0 120px rgba(160,0,28,.09);
         transition:opacity .45s ease;
       }
@@ -813,6 +836,11 @@
           if (typeof recoverConnection === 'function') recoverConnection();
         }
       });
+      /* the pinch frame needs no geometry code at all: it is an
+         inset:0 child of the fixed body (see the sizing note on
+         #pinchVignette in the CSS), so it tracks the screen edges
+         by construction on every device — nothing is measured,
+         nothing is synced, nothing can go stale at launch. */
       var START_LP = 8000;
       var LOW_LP = 2000;
       var PINCH_LP = 1000; /* anime pinch staging threshold: at or below this (0 included) the red pulse runs */
