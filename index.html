@@ -95,14 +95,19 @@
         color:var(--ink);
         font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
         -webkit-font-smoothing:antialiased;
-        /* the body IS the viewport: pinned to all four screen edges,
-           so its box is the visible screen by construction, on every
-           device, with no height ever measured or assumed (the page
-           never scrolls; overflow stays hidden). Anything stretched
-           to inset:0 inside it — the pinch frame — shares this exact
-           box, so it cannot detach from the screen edges whatever
-           the handset or the launch timing. */
-        position:fixed; inset:0;
+        /* the body is deliberately NOT position:fixed. A fixed body
+           froze at the height iOS reported in the first layout of a
+           home-screen launch — measurably short of the real screen
+           (the whole page, background included, ended ~7% above the
+           bottom edge with a flat void below it, exactly as the user
+           photographed) — and a fixed, never-scrolling page gives
+           iOS no reason to ever relayout it to the settled height.
+           In normal flow the page's height comes from #app's 100dvh,
+           a live unit iOS keeps updating as the standalone viewport
+           settles after launch, so the layout follows the screen
+           instead of a launch-time snapshot of it. The page still
+           never scrolls: content is exactly one viewport tall and
+           overflow stays hidden. */
         overflow:hidden;
         overscroll-behavior:none;
         touch-action:manipulation;
@@ -495,16 +500,16 @@
          glow turns red with it. The frame is styled after a handset's
          glowing bezel (the Siri / Apple Intelligence edge light):
          a bright thin core line whose hue drifts between deep red
-         and hot coral around the perimeter (a masked conic ring,
-         ::before), spilling only a soft bloom inward. The previous
-         flat 2px outline plus full-screen red wash read as a cheap
-         drawn rectangle, so both are gone. The staging stays on at
-         LP 0 too — reaching K.O. does not switch it off, the K.O.
-         badge and number styling simply join it. Per-card, whichever
-         player's LP is in range gets the red plate + red number, so
-         in remote the opponent's strip also reads as pinch at a
-         glance. Cost discipline matches the rest of the page: one
-         fixed overlay animating opacity only (no blur filter, no
+         at the corners and hot coral mid-edge, spilling only a
+         soft bloom inward. The previous flat 2px outline plus
+         full-screen red wash read as a cheap drawn rectangle, so
+         both are gone. The staging stays on at LP 0 too — reaching
+         K.O. does not switch it off, the K.O. badge and number
+         styling simply join it. Per-card, whichever player's LP
+         is in range gets the red plate + red number, so in remote
+         the opponent's strip also reads as pinch at a glance.
+         Cost discipline matches the rest of the page: four thin
+         fixed strips animating opacity only (no blur filter, no
          timers), the plate reuses the frame-glow box-shadow
          animation in red, everything freezes under .app-hidden and
          stops entirely under prefers-reduced-motion (static red
@@ -521,43 +526,63 @@
          way the OS edge light itself follows the glass. In a
          browser tab the viewport corners are square and the line
          simply runs along the window edge.
-         Sizing note: NO geometry is measured anywhere — no pixel
-         heights, no viewport units, no JS sync pass. The overlay is
-         an ordinary child of the body stretched to inset:0, and the
-         body itself is position:fixed at inset:0, so frame,
-         background and content all share one and the same box: the
-         visible screen, whatever size the device happens to be.
-         Earlier builds sized this frame from a measured height —
-         first 100dvh, then a visualViewport pixel height re-asserted
-         by JS on show / foreground / resize — and on iOS that
-         measurement could be the transient launch height, leaving
-         the bottom line floating above the real screen bottom until
-         some unrelated relayout snapped it back (timing-dependent,
-         exactly as reported). Sharing the body's box removes the
-         whole class of failure: there is nothing to measure, so
-         there is nothing that can be stale — on any handset, at
-         any timing. */
-      #pinchVignette{
-        position:absolute; inset:0; z-index:40; pointer-events:none; opacity:0;
-        box-shadow:inset 0 0 16px rgba(255,45,75,.34), inset 0 0 58px rgba(215,10,45,.18), inset 0 0 120px rgba(160,0,28,.09);
+         Sizing note: the frame has NO box and NO size of its own —
+         that is the whole point, after three builds failed by
+         giving it one. A single inset:0 rectangle inherits its
+         height from somewhere (a measured pixel height, a dvh
+         snapshot, the body's box), and on iOS a home-screen launch
+         can hand over a transient height ~7% short of the screen:
+         the rectangle's bottom line then floats above the real
+         bottom, or — when the body itself was the box — the entire
+         page ends early above a flat void. So the frame is four
+         independent strips, one per screen edge, each position:
+         fixed and anchored ONLY to its own edge of the viewport
+         (the bottom strip is bottom:0 with a fixed 2px height; its
+         place never comes from anyone's height, including the
+         body's — the user explicitly rejected depending on the
+         main content's size). Nothing is measured, no JS syncs
+         anything, and there is no height value anywhere in the
+         mechanism that could go stale: each line sits on its edge
+         because the edge itself is its anchor, on any handset, at
+         any launch timing. The soft inward bloom that the old
+         full-box inset shadow painted is now each strip's own
+         box-shadow spilling inward (shadows are not clipped by
+         the strip, and the outward half lands off-screen). */
+      /* the wrapper itself renders nothing: no box, no size */
+      #pinchVignette{ display:contents; }
+      /* one lit strip per screen edge: deep red at the corners,
+         hot coral mid-edge, like light running through the
+         handset's frame rather than one flat painted stripe. The
+         first shadow is the tight bezel glow hugging the line;
+         the second, offset inward, is the soft bloom spilling
+         onto the field. All four strips breathe together via the
+         shared opacity pulse on body.pinch-active. */
+      #pinchVignette i{
+        position:fixed; z-index:40; pointer-events:none; opacity:0;
         transition:opacity .45s ease;
       }
-      /* the lit bezel line itself: a 2px ring (parent padding masked
-         down to the border) whose colour travels around the frame —
-         deep red at the corners, hot coral mid-edge — like light
-         running through the handset's frame rather than one flat
-         painted stripe. Painted once; the parent's opacity pulse
-         breathes the whole overlay, ring included. */
-      #pinchVignette::before{
-        content:""; position:absolute; inset:0; padding:2px;
-        background:conic-gradient(from 215deg, rgba(255,64,84,.95), rgba(255,128,74,.85) 16%, rgba(255,43,74,.95) 36%, rgba(255,92,62,.82) 54%, rgba(255,43,74,.95) 71%, rgba(255,138,84,.85) 87%, rgba(255,64,84,.95));
-        -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        -webkit-mask-composite:xor;
-        mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-        mask-composite:exclude;
+      #pinchVignette .pv-t{
+        top:0; left:0; right:0; height:2px;
+        background:linear-gradient(90deg, rgba(255,43,74,.95), rgba(255,128,74,.88) 50%, rgba(255,43,74,.95));
+        box-shadow:0 0 14px 2px rgba(255,45,75,.40), 0 12px 46px 8px rgba(215,10,45,.16), 0 30px 90px 10px rgba(160,0,28,.07);
       }
-      body.pinch-active #pinchVignette{ opacity:.85; animation:pinchpulse 1.6s ease-in-out infinite alternate; }
-      @keyframes pinchpulse{ from{ opacity:.6; } to{ opacity:1; } }
+      #pinchVignette .pv-b{
+        bottom:0; left:0; right:0; height:2px;
+        background:linear-gradient(90deg, rgba(255,43,74,.95), rgba(255,110,66,.88) 50%, rgba(255,43,74,.95));
+        box-shadow:0 0 14px 2px rgba(255,45,75,.40), 0 -12px 46px 8px rgba(215,10,45,.16), 0 -30px 90px 10px rgba(160,0,28,.07);
+      }
+      #pinchVignette .pv-l{
+        left:0; top:0; bottom:0; width:2px;
+        background:linear-gradient(180deg, rgba(255,43,74,.95), rgba(255,92,62,.85) 50%, rgba(255,43,74,.95));
+        box-shadow:0 0 14px 2px rgba(255,45,75,.40), 12px 0 46px 8px rgba(215,10,45,.16), 30px 0 90px 10px rgba(160,0,28,.07);
+      }
+      #pinchVignette .pv-r{
+        right:0; top:0; bottom:0; width:2px;
+        background:linear-gradient(180deg, rgba(255,43,74,.95), rgba(255,138,84,.85) 50%, rgba(255,43,74,.95));
+        box-shadow:0 0 14px 2px rgba(255,45,75,.40), -12px 0 46px 8px rgba(215,10,45,.16), -30px 0 90px 10px rgba(160,0,28,.07);
+      }
+      body.pinch-active #pinchVignette i{ opacity:.9; animation:pinchpulse 1.6s ease-in-out infinite alternate; }
+      @keyframes pinchpulse{ from{ opacity:.62; } to{ opacity:1; } }
       .pcard.is-pinch:not(.flash-dmg):not(.flash-heal){ animation:pinchframe 1.5s ease-in-out infinite alternate; }
       @keyframes pinchframe{
         from{ box-shadow:inset 0 0 0 1px rgba(255,110,130,.35), inset 0 0 22px rgba(255,40,70,.14), inset 0 1px 0 rgba(255,170,180,.25), 0 8px 26px rgba(0,0,0,.5), 0 0 12px rgba(255,40,70,.22); }
@@ -570,7 +595,7 @@
       .pcard[data-p="1"] .lp.pinch{ color:#ff6b57; }
       .lpbar.pinch > i{ background:linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0) 55%), linear-gradient(90deg,#c21830,#ff5b3c); box-shadow:0 0 12px rgba(255,60,70,.6); }
       @media (prefers-reduced-motion: reduce){
-        body.pinch-active #pinchVignette{ animation:none !important; opacity:.8; }
+        body.pinch-active #pinchVignette i{ animation:none !important; opacity:.85; }
         .pcard.is-pinch:not(.flash-dmg):not(.flash-heal){ animation:none !important; box-shadow:inset 0 0 0 1px rgba(255,110,130,.55), inset 0 0 30px rgba(255,40,70,.24), 0 8px 26px rgba(0,0,0,.5), 0 0 20px rgba(255,40,70,.35); }
         .pcard.is-pinch::before{ animation:none !important; }
       }
@@ -739,8 +764,11 @@
       </div>
     </div>
 
-    <!-- pinch staging: red breathing vignette while own LP is 1000 or less -->
-    <div id="pinchVignette" aria-hidden="true"></div>
+    <!-- pinch staging: red breathing edge light while own LP is 1000 or
+         less. Four independent strips, each fixed to its own screen
+         edge — the frame has no box or height of its own (see the
+         sizing note on #pinchVignette in the CSS). -->
+    <div id="pinchVignette" aria-hidden="true"><i class="pv-t"></i><i class="pv-r"></i><i class="pv-b"></i><i class="pv-l"></i></div>
 
     <div id="toast" role="status"></div>
 
@@ -836,11 +864,12 @@
           if (typeof recoverConnection === 'function') recoverConnection();
         }
       });
-      /* the pinch frame needs no geometry code at all: it is an
-         inset:0 child of the fixed body (see the sizing note on
-         #pinchVignette in the CSS), so it tracks the screen edges
-         by construction on every device — nothing is measured,
-         nothing is synced, nothing can go stale at launch. */
+      /* the pinch frame needs no geometry code at all: it is four
+         strips, each position:fixed to its own edge of the screen
+         (see the sizing note on #pinchVignette in the CSS), so no
+         height is ever measured, assumed or synced — each line's
+         place comes from the edge it is anchored to, and nothing
+         can go stale at launch. */
       var START_LP = 8000;
       var LOW_LP = 2000;
       var PINCH_LP = 1000; /* anime pinch staging threshold: at or below this (0 included) the red pulse runs */
