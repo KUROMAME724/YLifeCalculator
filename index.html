@@ -353,8 +353,7 @@
       /* own card: full size, directly above the keypad */
       #remoteCards .pcard.is-self{ order:2; padding:10px 12px 9px; }
       #remoteCards .pcard.is-self .lp{ font-size:clamp(58px,16vw,88px); }
-      #remoteCards .pcard.is-self .pname{ color:var(--ink); }
-      #remoteCards .pcard.is-self .pname{ font-size:14px; max-width:220px; }
+      #remoteCards .pcard.is-self .pname{ color:var(--ink); font-size:14px; max-width:220px; }
       #remoteCards .pcard.is-self .lpbar{ margin-top:6px; height:8px; }
       /* opponent: LP-only strip */
       #remoteCards .pcard.is-opp{ order:1; display:flex; align-items:center; gap:10px; padding:7px 12px; }
@@ -583,6 +582,17 @@
       }
       body.pinch-active #pinchVignette i{ opacity:.9; animation:pinchpulse 1.6s ease-in-out infinite alternate; }
       @keyframes pinchpulse{ from{ opacity:.62; } to{ opacity:1; } }
+      /* display gate: on a cold launch iOS can paint the very first
+         frame against a viewport that has not settled yet, and a
+         strip from that frame has been seen lingering at the wrong
+         height even though its anchor is the edge itself. So until
+         JS lifts the gate (html.pinch-ready, added once the launch
+         display has settled — see pinchGate in the script) the
+         strips stay invisible even if pinch is already active.
+         The gate measures nothing and moves nothing: the strips
+         keep their own edge anchors the whole time; it only
+         decides WHEN they may first appear. */
+      html:not(.pinch-ready) #pinchVignette i{ opacity:0 !important; animation:none !important; }
       .pcard.is-pinch:not(.flash-dmg):not(.flash-heal){ animation:pinchframe 1.5s ease-in-out infinite alternate; }
       @keyframes pinchframe{
         from{ box-shadow:inset 0 0 0 1px rgba(255,110,130,.35), inset 0 0 22px rgba(255,40,70,.14), inset 0 1px 0 rgba(255,170,180,.25), 0 8px 26px rgba(0,0,0,.5), 0 0 12px rgba(255,40,70,.22); }
@@ -645,7 +655,7 @@
       }
     </style>
   </head>
-  <body data-mode="solo">
+  <body>
     <div id="app">
       <nav class="modebar" aria-label="モード切替">
         <div class="seg" role="group" aria-label="プレイモード">
@@ -870,6 +880,35 @@
          height is ever measured, assumed or synced — each line's
          place comes from the edge it is anchored to, and nothing
          can go stale at launch. */
+      /* display gate for the pinch frame: on a cold launch (the app
+         process was killed while away, say) iOS can paint the first
+         frame against a not-yet-settled viewport, and a strip from
+         that frame can linger at the wrong height. So the strips
+         start gated invisible (html starts without .pinch-ready;
+         see the gate rule in the CSS) and the gate lifts exactly
+         once, when the launch display has settled: window load,
+         two painted frames, and a short beat after that. Nothing
+         is measured and no position ever changes — the gate only
+         decides WHEN the strips may first appear, and it never
+         re-arms, so mid-duel pinch staging is unaffected. A hard
+         timeout guarantees the gate cannot swallow the frame for
+         good if load stalls (a slow CDN script or font). */
+      (function pinchGate(){
+        var lifted = false;
+        function lift(){
+          if (lifted) return;
+          lifted = true;
+          document.documentElement.classList.add('pinch-ready');
+        }
+        function settle(){
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ setTimeout(lift, 350); });
+          });
+        }
+        if (document.readyState === 'complete') settle();
+        else window.addEventListener('load', settle);
+        setTimeout(lift, 3000);
+      })();
       var START_LP = 8000;
       var LOW_LP = 2000;
       var PINCH_LP = 1000; /* anime pinch staging threshold: at or below this (0 included) the red pulse runs */
@@ -1268,7 +1307,7 @@
           if (elm.textContent !== txt) elm.textContent = txt;
         });
       }
-      function rollDuration(delta){
+      function rollDuration(){
         /* fixed: the reference recording's full 尺 — first pulse to
            landing attack — whatever the size of the change, so the
            number and the sound always run exactly as long as the
@@ -1295,10 +1334,9 @@
           if (!rolls[1 - p]) lastPulseAt = performance.now() - 80;
         }
         /* retargeting mid-roll starts from the value on screen now */
-        roll.from = from; roll.to = to; roll.delta = delta;
-        roll.dmg = delta < 0;
+        roll.from = from; roll.to = to;
         roll.start = performance.now();
-        roll.dur = rollDuration(delta);
+        roll.dur = rollDuration();
         if (!roll.raf) roll.raf = requestAnimationFrame(function(ts){ stepRoll(p, ts); });
       }
       function stepRoll(p, ts){
@@ -1700,7 +1738,6 @@
       var views = { solo:document.getElementById('view-solo'), remote:document.getElementById('view-remote') };
       function switchMode(m){
         mode = m;
-        document.body.setAttribute('data-mode', m);
         Object.keys(views).forEach(function(k){ views[k].hidden = k !== m; });
         document.querySelectorAll('[data-mode-btn]').forEach(function(b){
           b.setAttribute('aria-pressed', b.getAttribute('data-mode-btn') === m ? 'true' : 'false');
